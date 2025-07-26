@@ -1,0 +1,84 @@
+[project]
+name = "fastapi-easy-versioning"
+version = "0.1.0"
+description = "Easy way to build versioning APIs by FastAPI"
+readme = "README.md"
+authors = [{ name = "Fedor Ratschew", email = "feodor.ra@me.com" }]
+requires-python = ">=3.9.0,<4"
+dependencies = [
+    "fastapi>=0.95.0",
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/feodor-ra/fastapi-easy-versioning"
+Homepage = "https://github.com/feodor-ra/fastapi-easy-versioning"
+Documentation = "https://feodor-ra.github.io/fastapi-easy-versioning/"
+
+[build-system]
+requires = ["uv_build>=0.8.3,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    {include-group = "lint"},
+]
+lint = [
+    "mypy~=1.17.0",
+    "pre-commit~=4.0",
+    "ruff~=0.12.4",
+]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py39"
+fix = true
+
+[tool.ruff.lint]
+select = ['ALL']
+ignore = [
+    'D100',
+    'D101',
+    'D102',
+    'D103',
+    'D103',
+    'D104',
+    'D105',
+    'D106',
+    'D107',
+    'D203',
+    'D213',
+    'COM812',
+    'CPY',
+]
+preview = true
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+preview = true
+
+[tool.ruff.lint.isort]
+case-sensitive = true
+force-sort-within-sections = true
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
