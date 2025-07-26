@@ -36,6 +36,7 @@ build-backend = "uv_build"
 dev = [
     {include-group = "lint"},
     {include-group = "examples"},
+    {include-group = "test"}
 ]
 lint = [
     "mypy~=1.17.0",
@@ -44,6 +45,12 @@ lint = [
 ]
 examples = [
     "fastapi[standard]",
+]
+test = [
+    "anyio~=4.9.0",
+    "httpx~=0.28.1",
+    "pytest~=8.4.1",
+    "pytest-cov~=6.2.1",
 ]
 
 [tool.ruff]
@@ -82,11 +89,25 @@ preview = true
 [tool.ruff.lint.isort]
 case-sensitive = true
 force-sort-within-sections = true
-known-third-party=["fastapi_easy_versioning"]
+known-third-party=["fastapi_easy_versioning", "pytest"]
 
 [tool.ruff.lint.per-file-ignores]
 "examples/*" = ["INP001", "E501"]
+"tests/*" = ["S101", "PLR0913", "PLR0917"]
 
 [tool.mypy]
 python_version = "3.9"
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*.py"]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = [
+    "--cov=src.fastapi_easy_versioning",
+    "--cov-report=xml",
+    "--cov-report=term"
+]
