@@ -35,11 +35,15 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     {include-group = "lint"},
+    {include-group = "examples"},
 ]
 lint = [
     "mypy~=1.17.0",
     "pre-commit~=4.0",
     "ruff~=0.12.4",
+]
+examples = [
+    "fastapi[standard]",
 ]
 
 [tool.ruff]
@@ -78,6 +82,10 @@ preview = true
 [tool.ruff.lint.isort]
 case-sensitive = true
 force-sort-within-sections = true
+known-third-party=["fastapi_easy_versioning"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/*" = ["INP001", "E501"]
 
 [tool.mypy]
 python_version = "3.9"
