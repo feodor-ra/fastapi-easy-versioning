@@ -2,7 +2,7 @@
 
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versionings)
+![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
 ![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
 ![Test results](https://github.com/feodor-ra/fastapi-easy-versioning/actions/workflows/tests.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/feodor-ra/fastapi-easy-versioning/badge.svg?branch=master)](https://coveralls.io/github/feodor-ra/fastapi-easy-versioning?branch=master)
