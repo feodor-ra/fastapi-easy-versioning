@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/dependency/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/dependency/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/dependency/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/middleware/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/middleware/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/examples/multiple/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/examples/multiple/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/examples/multiple/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/examples/simple/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/examples/simple/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/examples/simple/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/ru/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/ru/dependency/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/dependency/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/dependency/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/ru/middleware/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/middleware/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/middleware/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/ru/examples/multiple/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/examples/multiple/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/examples/multiple/"/>
+    </url>
+    <url>
+        <loc>https://feodor-ra.github.io/fastapi-easy-versioning/ru/examples/simple/</loc>
+        <lastmod>2025-07-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://feodor-ra.github.io/fastapi-easy-versioning/ru/examples/simple/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://feodor-ra.github.io/fastapi-easy-versioning/examples/simple/"/>
+    </url>
+</urlset>
