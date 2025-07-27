@@ -1,0 +1,82 @@
+site_name: FastAPI Easy Versioning
+site_url: https://feodor-ra.github.io/fastapi-easy-versioning
+repo_url: https://github.com/feodor-ra/fastapi-easy-versioning
+repo_name: feodor-ra/fastapi-easy-versioning
+plugins:
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: ru
+          name: Русский
+          build: true
+          theme:
+            palette:
+                - media: (prefers-color-scheme)
+                  toggle:
+                    name: Светлая тема
+                - media: '(prefers-color-scheme: light)'
+                  toggle:
+                    name: Темная тема
+                - media: '(prefers-color-scheme: dark)'
+                  toggle:
+                    name: Системная тема
+          nav:
+            - Главная: index.md
+            - Зависимость: dependency.md
+            - Middleware: middleware.md
+            - Примеры:
+              - Простое версионирование: examples/simple.md
+              - Версионирование нескольких API: examples/multiple.md
+        - locale: en
+          default: true
+          name: English
+          build: true
+  - search
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+theme:
+  name: material
+  palette:
+  - media: (prefers-color-scheme)
+    toggle:
+      icon: material/lightbulb-auto
+      name: Switch to light mode
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    primary: blue
+    accent: red
+    toggle:
+      icon: material/lightbulb
+      name: Switch to dark mode
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    primary: blue
+    accent: red
+    toggle:
+      icon: material/lightbulb-outline
+      name: Switch to system preference
+  features:
+    - content.code.copy
+    - content.code.annotate
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/feodor-ra
+  - icon: fontawesome/brands/telegram
+    link: https://t.me/ratschew
+nav:
+  - Home: index.md
+  - Dependency: dependency.md
+  - Middleware: middleware.md
+  - Examples:
+    - Simple versioning: examples/simple.md
+    - Multiple APIs versioning: examples/multiple.md
