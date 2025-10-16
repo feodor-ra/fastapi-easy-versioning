@@ -50,11 +50,19 @@ class VersioningMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         dispatch: DispatchFunction | None = None,
+        *,
+        rebuild_openapi: bool = True,
     ) -> None:
         super().__init__(app, dispatch)
         self._latest_setup_routes = set[str]()
+        self._rebuild_openapi = rebuild_openapi
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
         if isinstance(app := scope.get("app"), Starlette):
             self._build_versioning_routes(app)
         return await super().__call__(scope, receive, send)
@@ -76,9 +84,12 @@ class VersioningMiddleware(BaseHTTPMiddleware):
                 continue
             if route not in app.router.routes:
                 app.router.routes.append(route)
+
+        self._latest_setup_routes = hashes
+        if not self._rebuild_openapi:
+            return
         for app in version_mapping.values():
             app.openapi_schema = app.openapi()
-        self._latest_setup_routes = hashes
 
     @staticmethod
     async def dispatch(

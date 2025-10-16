@@ -1,11 +1,12 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
 from httpx import AsyncClient
 import pytest
 
 from src.fastapi_easy_versioning import (
+    VersioningMiddleware,
     VersioningSupport,
     versioning,
 )
@@ -108,3 +109,26 @@ async def test_require_versioning_endpoint_from_app_without_extra(
     response = await client.get("/v3/test")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+async def test_require_versioning_endpoint_without_openapi_rebuild(
+    client: AsyncClient, app: FastAPI, v1: FastAPI, v2: FastAPI
+) -> None:
+    """Try require versioning endpoint from previous version with disabled OpenAPI rebuild.
+
+    This response 204 code.
+    """  # noqa: E501
+    expected_status = HTTPStatus.NO_CONTENT
+    app.add_middleware(VersioningMiddleware, rebuild_openapi=False)
+    v1.add_api_route(
+        "/test",
+        lambda: Response(status_code=expected_status),
+        dependencies=[Depends(versioning())],
+    )
+    openapi_before = v2.openapi_schema
+
+    response = await client.get("/v2/test")
+    openapi_after = v2.openapi_schema
+
+    assert response.status_code == expected_status
+    assert openapi_before == openapi_after
