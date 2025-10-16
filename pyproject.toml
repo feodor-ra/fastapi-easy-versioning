@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-easy-versioning"
-version = "0.1.0"
+version = "0.2.0"
 description = "Easy way to build versioning APIs by FastAPI"
 readme = "README.md"
 authors = [{ name = "Fedor Ratschew", email = "feodor.ra@me.com" }]
@@ -94,7 +94,7 @@ preview = true
 [tool.ruff.lint.isort]
 case-sensitive = true
 force-sort-within-sections = true
-known-third-party=["fastapi_easy_versioning", "pytest"]
+known-third-party = ["fastapi_easy_versioning", "pytest"]
 
 [tool.ruff.lint.per-file-ignores]
 "examples/*" = ["INP001", "E501"]
@@ -114,5 +114,5 @@ python_files = ["test_*.py"]
 addopts = [
     "--cov=src.fastapi_easy_versioning",
     "--cov-report=xml",
-    "--cov-report=term"
+    "--cov-report=term",
 ]
