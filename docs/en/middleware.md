@@ -52,4 +52,18 @@ The middleware identifies which FastAPI applications participate in versioning u
 
 The middleware checks for versioned endpoints and sub-applications on the first request and adds endpoints to sub-applications according to their versioning settings, while also rebuilding the OpenAPI schema.
 
+If you need to disable rebuilding the OpenAPI schema on request, you can do this when configuring the middleware by passing the `rebuild_openapi` parameter:
+
+```python
+from fastapi import Depends, FastAPI, middleware
+from fastapi_easy_versioning import VersioningMiddleware
+
+app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware, rebuild_openapi=False)])
+
+# or
+
+app = FastAPI()
+app.add_middleware(VersioningMiddleware, rebuild_openapi=False)
+```
+
 The middleware caches information about built endpoints and doesn't perform additional work on subsequent requests. However, if a versioned endpoint is added during runtime, it will be added to all relevant sub-applications on the next request, and their OpenAPI schemas will be rebuilt.
