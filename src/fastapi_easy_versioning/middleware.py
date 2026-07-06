@@ -14,6 +14,7 @@ from starlette.middleware.base import (
     RequestResponseEndpoint,
 )
 from starlette.routing import Mount
+from typing_extensions import override
 
 from .dependency import VersioningSupport
 
@@ -91,9 +92,9 @@ class VersioningMiddleware(BaseHTTPMiddleware):
         for app in version_mapping.values():
             app.openapi_schema = app.openapi()
 
-    @staticmethod
+    @override
     async def dispatch(
-        request: Request, call_next: RequestResponseEndpoint
+        self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         return await call_next(request)
 

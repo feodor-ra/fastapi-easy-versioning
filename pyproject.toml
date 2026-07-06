@@ -7,6 +7,7 @@ authors = [{ name = "Fedor Ratschew", email = "feodor.ra@me.com" }]
 requires-python = ">=3.9.0,<4"
 dependencies = [
     "fastapi>=0.95.0",
+    "typing-extensions>=4.4.0",
 ]
 license = { file = "LICENSE" }
 classifiers = [
@@ -40,9 +41,9 @@ dev = [
     {include-group = "docs"},
 ]
 lint = [
-    "mypy~=1.17.0",
     "pre-commit~=4.0",
     "ruff~=0.12.4",
+    "ty~=0.0.56",
 ]
 examples = [
     "fastapi[standard]",
@@ -100,13 +101,11 @@ known-third-party = ["fastapi_easy_versioning", "pytest"]
 "examples/*" = ["INP001", "E501"]
 "tests/*" = ["S101", "PLR0913", "PLR0917"]
 
-[tool.mypy]
-python_version = "3.9"
-strict = true
+[tool.ty.environment]
+python-version = "3.9"
 
-[[tool.mypy.overrides]]
-module = ["tests.*.py"]
-ignore_errors = true
+[tool.ty.src]
+exclude = ["tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

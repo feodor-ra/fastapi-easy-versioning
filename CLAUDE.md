@@ -12,11 +12,11 @@ Two pieces must be used **together**:
 
 Key files:
 - `src/fastapi_easy_versioning/__init__.py` — re-exports the 3 public names.
-- `src/fastapi_easy_versioning/dependency.py` — `versioning()` returns a `VersioningSupport(until=until)` (a callable usable in `Depends()`). `VersioningSupport` holds `self.until` and `self.origin` (init `None`). Its `__call__` raises `RuntimeError("VersioningMiddleware not used")` if `origin`/`until` are still `None`, else returns `self` — so an endpoint can inject `Annotated[VersioningSupport, Depends(versioning())]` and read `.origin` / `.until`. (Imports `Self` from `typing_extensions`, an undeclared dep pulled in transitively via fastapi/pydantic.)
+- `src/fastapi_easy_versioning/dependency.py` — `versioning()` returns a `VersioningSupport(until=until)` (a callable usable in `Depends()`). `VersioningSupport` holds `self.until` and `self.origin` (init `None`). Its `__call__` raises `RuntimeError("VersioningMiddleware not used")` if `origin`/`until` are still `None`, else returns `self` — so an endpoint can inject `Annotated[VersioningSupport, Depends(versioning())]` and read `.origin` / `.until`. (Uses `typing_extensions` — `Self` here and `override` in `middleware.py` — an undeclared dep pulled in transitively via fastapi/pydantic.)
 - `src/fastapi_easy_versioning/middleware.py` — the real logic.
 
 Middleware mechanics (in `middleware.py`):
-- Subclasses starlette `BaseHTTPMiddleware`, but `dispatch()` is a no-op passthrough (`await call_next(request)`). Real work is in the overridden ASGI `__call__`, which calls `_build_versioning_routes(app)` before delegating to `super().__call__`.
+- Subclasses starlette `BaseHTTPMiddleware`, but `dispatch()` is a no-op passthrough (`await call_next(request)`). Real work is in the overridden ASGI `__call__`, which calls `_build_versioning_routes(app)` before delegating to `super().__call__`. `dispatch` is an **instance method** decorated with `@override` (`typing_extensions`) because it overrides `BaseHTTPMiddleware.dispatch`: a `@staticmethod` trips ty's `invalid-method-override` (LSP), and `@override` also silences ruff's no-self-use (`PLR6301`) that would otherwise push it back to static.
 - **Lazy + cached**: the overridden `__call__` runs `_build_versioning_routes` on the first ASGI event whose `scope["app"]` is a `Starlette` — under a real server (uvicorn) that is the **lifespan startup** event for a root-mounted middleware, but the **first HTTP request** in the httpx test suite (ASGITransport skips lifespan) or when the middleware sits on a *mounted* sub-app (mounts don't receive lifespan). `_latest_setup_routes` (a `set[str]` of route `unique_id`s) short-circuits rebuilds when the versioned-route set is unchanged.
 - **Version discovery** (`_build_version_mapping`): a sub-app counts as a version only if it is a starlette `Mount`, `.app` is a `FastAPI`, and `.app.extra["api_version"]` is an `int` (`API_VERSION_KEY = "api_version"`). Pass it as `FastAPI(api_version=N)` — unknown kwargs land in `.extra`. Mapping is sorted ascending (low version first).
 - **Opt-in**: a route is "managed" only if it has a dependency whose `.call` is a `VersioningSupport`; others are skipped and stay only in their own sub-app.
@@ -38,7 +38,7 @@ uv run -m pytest                     # run tests (coverage is forced via addopts
 uv run -m coverage lcov              # CI coverage step
 uv run ruff check                    # lint (NOTE: fix=true globally, auto-fixes)
 uv run ruff format                   # format (CI does NOT check format; pre-commit does)
-uv run mypy src                      # typecheck (CI checks src only; strict=true)
+uv run ty check src                  # typecheck with ty (CI runs exactly this)
 uv run pre-commit run --all-files    # run all hooks
 uv build                             # build sdist+wheel
 uv run mkdocs serve                  # docs preview
@@ -55,8 +55,9 @@ uvx --python=3.13 --from="fastapi[standard]" --with="fastapi-easy-versioning" \
 
 - **Commits**: Conventional Commits. Do NOT add a `Co-Authored-By: Claude` trailer.
 - **Release flow**: bumping the version in `pyproject.toml` (static `version = "..."`) + committing does NOT publish. PyPI publish (`release.yml`) fires ONLY when a GitHub Release is `published`, via `uv build && uv publish` over OIDC trusted publishing (no token secret). Version bumps are dedicated `chore: bump to X` commits.
-- **CI**: lint (`ruff check` + `mypy src`) and tests (matrix 3.9–3.13) run on PR/push to master, ignoring `docs/**`, `README.md`, `LICENSE`. Docs auto-deploy to GitHub Pages on EVERY push to master.
-- **pre-commit**: hooks include ruff-check, ruff-format, `uv-lock`, mypy. Hook pins are slightly ahead of `pyproject` dev pins (ruff `v0.12.12` vs `~=0.12.4`; mypy `v1.17.1` vs `~=1.17.0`) — local pre-commit and `uv run` may use different tool versions. `ruff format --check` is enforced ONLY via pre-commit, not CI.
+- **CI**: lint (`ruff check` + `ty check src`) and tests (matrix 3.9–3.13) run on PR/push to master, ignoring `docs/**`, `README.md`, `LICENSE`. Docs auto-deploy to GitHub Pages on EVERY push to master.
+- **pre-commit**: hooks include ruff-check, ruff-format, `uv-lock`, `ty`. The ruff hook pin is slightly ahead of the `pyproject` dev pin (ruff `v0.12.12` vs `~=0.12.4`) — local pre-commit and `uv run` may use different tool versions. `ruff format --check` is enforced ONLY via pre-commit, not CI.
+- **Type checker is `ty`** (Astral, preview — pinned `ty~=0.0.56`), NOT mypy. There is no `strict = true` analog; ty uses its default rule set and `[tool.ty.terminal] error-on-warning` defaults to `true` (warnings fail too). `[tool.ty.environment] python-version = "3.9"`. `tests` are excluded via `[tool.ty.src] exclude`. ty resolves third-party imports (fastapi) straight from `pyproject.toml` — the pre-commit hook takes NO `additional_dependencies` (unlike the old mypy hook), and checks the whole project (minus `tests`), while CI narrows to `ty check src`.
 - **`api_version` must be an `int`** — a `str`/`float` or an unmounted sub-app is silently ignored.
 - **`versioning()` (until=None)** means "available through the latest version", NOT "only this version" — a common surprise.
 - **Endpoints without `Depends(versioning())` are never inherited** and are invisible to the system; opting in is mandatory.
