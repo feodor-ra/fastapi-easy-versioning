@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-easy-versioning"
-version = "0.2.0"
+version = "0.3.0"
 description = "Easy way to build versioning APIs by FastAPI"
 readme = "README.md"
 authors = [{ name = "Fedor Ratschew", email = "feodor.ra@me.com" }]
