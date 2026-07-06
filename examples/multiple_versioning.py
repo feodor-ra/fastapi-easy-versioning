@@ -54,4 +54,4 @@ def public_endpoint_v2() -> str:
 
 
 # To run this example use:
-# uvx --python=3.13 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev examples/multiple_versioning.py
+# uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev examples/multiple_versioning.py

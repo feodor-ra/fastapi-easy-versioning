@@ -11,7 +11,7 @@ git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
 ```
 
 ```bash
-uvx --python=3.13 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/simple_versioning.py
+uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/simple_versioning.py
 ```
 
 The example contains the following code:

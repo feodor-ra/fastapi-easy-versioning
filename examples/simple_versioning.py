@@ -40,4 +40,4 @@ def overload_another_endpoint() -> str:
 
 
 # To run this example use:
-# uvx --python=3.13 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev examples/simple_versioning.py
+# uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev examples/simple_versioning.py
