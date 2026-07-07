@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -18,21 +18,28 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-def client(app: FastAPI) -> AsyncClient:
-    return AsyncClient(
+async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(
         base_url="http://1.2.3.4:123/",
         transport=ASGITransport(app, client=("1.2.3.4", 123)),
-    )
+    ) as client:
+        yield client
 
 
 @pytest.fixture
-def setup_middleware() -> Callable[[FastAPI], None]:
-    def setup(app: FastAPI) -> None:
-        app.add_middleware(VersioningMiddleware)
-
-    return setup
+def middleware_setup(app: FastAPI) -> None:
+    app.add_middleware(VersioningMiddleware)
 
 
 @pytest.fixture
-def middleware_setup(setup_middleware: Callable[[FastAPI], None], app: FastAPI) -> None:
-    setup_middleware(app)
+def v1(app: FastAPI) -> FastAPI:
+    v1 = FastAPI(api_version=1)
+    app.mount("/v1", v1)
+    return v1
+
+
+@pytest.fixture
+def v2(app: FastAPI) -> FastAPI:
+    v2 = FastAPI(api_version=2)
+    app.mount("/v2", v2)
+    return v2

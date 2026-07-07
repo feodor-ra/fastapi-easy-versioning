@@ -16,20 +16,6 @@ from src.fastapi_easy_versioning import (
 pytestmark = [pytest.mark.anyio]
 
 
-@pytest.fixture
-def v1(app: FastAPI) -> FastAPI:
-    v1 = FastAPI(api_version=1)
-    app.mount("/v1", v1)
-    return v1
-
-
-@pytest.fixture
-def v2(app: FastAPI) -> FastAPI:
-    v2 = FastAPI(api_version=2)
-    app.mount("/v2", v2)
-    return v2
-
-
 @pytest.mark.usefixtures("v2")
 async def test_require_versioning_endpoint_without_use_middleware(
     client: AsyncClient,
@@ -318,6 +304,44 @@ async def test_runtime_routes_require_explicit_rebuild(
     assert after_rebuild.status_code == HTTPStatus.OK
     assert v2.openapi_schema is not None
     assert "/new" in v2.openapi_schema["paths"]
+
+
+async def test_multiple_independent_versioned_apps(
+    client: AsyncClient,
+    app: FastAPI,
+) -> None:
+    """Version two mounted apps independently with their own middleware.
+
+    Each middleware instance versions only the sub-apps mounted directly
+    under its own app, as in examples/multiple_versioning.py.
+    """
+    public = FastAPI()
+    public.add_middleware(VersioningMiddleware)
+    private = FastAPI()
+    private.add_middleware(VersioningMiddleware)
+    app.mount("/public", public)
+    app.mount("/private", private)
+    public_v1 = FastAPI(api_version=1)
+    private_v1 = FastAPI(api_version=1)
+    public.mount("/v1", public_v1)
+    public.mount("/v2", FastAPI(api_version=2))
+    private.mount("/v1", private_v1)
+    private.mount("/v2", FastAPI(api_version=2))
+
+    public_v1.router.add_api_route(
+        "/endpoint", lambda: None, dependencies=[Depends(versioning())]
+    )
+    private_v1.router.add_api_route(
+        "/endpoint", lambda: None, dependencies=[Depends(versioning(until=1))]
+    )
+
+    inherited = await client.get("/public/v2/endpoint")
+    limited = await client.get("/private/v2/endpoint")
+    declared = await client.get("/private/v1/endpoint")
+
+    assert inherited.status_code == HTTPStatus.OK
+    assert limited.status_code == HTTPStatus.NOT_FOUND
+    assert declared.status_code == HTTPStatus.OK
 
 
 def test_invalid_api_version_warns(app: FastAPI) -> None:
