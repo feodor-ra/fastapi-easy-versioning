@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import copy
 from operator import itemgetter
 from typing import TYPE_CHECKING, Final
 
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
+
+# request_response must come from fastapi.routing, not starlette: it is the
+# exact function APIRoute.__init__ builds its handler with (newer FastAPI
+# ships its own copy that wires the dependencies' AsyncExitStack into scope).
+from fastapi.routing import APIRoute, request_response
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
@@ -67,17 +72,33 @@ def rebuild_versioning(app: Starlette, *, rebuild_openapi: bool = True) -> None:
         return
 
     for route, origin, until in _collect_versioned_routes(version_mapping):
-        for version in range(origin, until + 1):
+        for version in range(origin + 1, until + 1):
             target = version_mapping.get(version)
-            if target is None or route in target.router.routes:
+            if target is None or _has_route(target, route):
                 continue
-            target.router.routes.append(route)
+            target.router.routes.append(_inherit_route(route, target))
 
     if not rebuild_openapi:
         return
     for version_app in version_mapping.values():
         version_app.openapi_schema = None
         version_app.openapi_schema = version_app.openapi()
+
+
+def _has_route(app: FastAPI, route: APIRoute) -> bool:
+    return any(
+        isinstance(existing, APIRoute)
+        and existing.path == route.path
+        and existing.methods & route.methods
+        for existing in app.router.routes
+    )
+
+
+def _inherit_route(route: APIRoute, target: FastAPI) -> APIRoute:
+    inherited = copy.copy(route)
+    inherited.dependency_overrides_provider = target
+    inherited.app = request_response(inherited.get_route_handler())
+    return inherited
 
 
 def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:

@@ -236,6 +236,64 @@ async def test_shared_router_reports_declaring_version(
 
 
 @pytest.mark.usefixtures("middleware_setup")
+async def test_redefined_endpoint_shadows_inherited(
+    client: AsyncClient,
+    v1: FastAPI,
+    v2: FastAPI,
+) -> None:
+    """Redefine a versioned endpoint in a newer version.
+
+    The newer version's own endpoint must win both at runtime and in the
+    OpenAPI schema; the older route is not inherited into that version.
+    """
+    v1.router.add_api_route(
+        "/test", lambda: "v1", dependencies=[Depends(versioning())], name="from_v1"
+    )
+    v2.router.add_api_route(
+        "/test", lambda: "v2", dependencies=[Depends(versioning())], name="from_v2"
+    )
+
+    response = await client.get("/v2/test")
+
+    assert response.json() == "v2"
+    assert v2.openapi_schema is not None
+    assert "from_v2" in v2.openapi_schema["paths"]["/test"]["get"]["operationId"]
+    test_routes = [r for r in v2.router.routes if getattr(r, "path", None) == "/test"]
+    assert len(test_routes) == 1
+
+
+@pytest.mark.usefixtures("middleware_setup")
+async def test_dependency_overrides_resolved_by_serving_version(
+    client: AsyncClient,
+    v1: FastAPI,
+    v2: FastAPI,
+) -> None:
+    """Override a dependency of an inherited route on the serving version's app.
+
+    dependency_overrides must be taken from the app that serves the request,
+    not only from the app that declared the route.
+    """
+
+    def get_flag() -> str:
+        return "real"
+
+    def endpoint(
+        flag: Annotated[str, Depends(get_flag)],
+        _: Annotated[VersioningSupport, Depends(versioning())],
+    ) -> dict[str, str]:
+        return {"flag": flag}
+
+    v1.router.add_api_route("/test", endpoint)
+    v2.dependency_overrides[get_flag] = lambda: "overridden"
+
+    v1_response = await client.get("/v1/test")
+    v2_response = await client.get("/v2/test")
+
+    assert v1_response.json() == {"flag": "real"}
+    assert v2_response.json() == {"flag": "overridden"}
+
+
+@pytest.mark.usefixtures("middleware_setup")
 async def test_runtime_routes_require_explicit_rebuild(
     client: AsyncClient,
     app: FastAPI,
