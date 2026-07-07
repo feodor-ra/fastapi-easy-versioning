@@ -31,7 +31,7 @@ Homepage = "https://github.com/feodor-ra/fastapi-easy-versioning"
 Documentation = "https://feodor-ra.github.io/fastapi-easy-versioning/"
 
 [build-system]
-requires = ["uv_build>=0.8.3,<0.9.0"]
+requires = ["uv_build>=0.8.3,<0.12.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
