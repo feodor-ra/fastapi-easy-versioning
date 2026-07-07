@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, Response
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 import pytest
 
 from src.fastapi_easy_versioning import (

@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 import pytest
 
 from src.fastapi_easy_versioning import VersioningMiddleware
