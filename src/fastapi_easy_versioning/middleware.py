@@ -1,40 +1,31 @@
 from __future__ import annotations
 
-from functools import reduce
-from itertools import tee
 from operator import itemgetter
 from typing import TYPE_CHECKING, Final
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.applications import Starlette
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    DispatchFunction,
-    RequestResponseEndpoint,
-)
 from starlette.routing import Mount
-from typing_extensions import override
 
 from .dependency import VersioningSupport
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping  # pragma: no cover
+    from collections.abc import Mapping  # pragma: no cover
 
-    from starlette.requests import Request  # pragma: no cover
-    from starlette.responses import Response  # pragma: no cover
     from starlette.types import ASGIApp, Receive, Scope, Send  # pragma: no cover
 
 API_VERSION_KEY: Final = "api_version"
 
 
-class VersioningMiddleware(BaseHTTPMiddleware):
+class VersioningMiddleware:
     """Middleware that provides and manages versioned APIs.
 
-    Adds support for versioned routing by mounting version-specific subapplications
-    under a single FastAPI instance. This middleware enables serving multiple
-    API versions through a unified entry point by inspecting the request path to route
-    requests to the appropriate version.
+    Adds support for versioned APIs by mounting version-specific subapplications
+    under a single FastAPI instance. On the first ASGI event it inherits versioned
+    endpoints from older versions into newer ones and regenerates each version's
+    OpenAPI schema. Requests themselves are routed by the mounts; use
+    `rebuild_versioning` to pick up routes added at runtime.
 
     Usage:
         ```python
@@ -47,58 +38,46 @@ class VersioningMiddleware(BaseHTTPMiddleware):
         ```
     """
 
-    def __init__(
-        self,
-        app: ASGIApp,
-        dispatch: DispatchFunction | None = None,
-        *,
-        rebuild_openapi: bool = True,
-    ) -> None:
-        super().__init__(app, dispatch)
-        self._latest_setup_routes = set[str]()
+    def __init__(self, app: ASGIApp, *, rebuild_openapi: bool = True) -> None:
+        self.app = app
         self._rebuild_openapi = rebuild_openapi
+        self._built = False
 
-    async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
-    ) -> None:
-        if isinstance(app := scope.get("app"), Starlette):
-            self._build_versioning_routes(app)
-        return await super().__call__(scope, receive, send)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if not self._built and isinstance(app := scope.get("app"), Starlette):
+            self._built = True
+            rebuild_versioning(app, rebuild_openapi=self._rebuild_openapi)
+        await self.app(scope, receive, send)
 
-    def _build_versioning_routes(self, root_app: Starlette) -> None:
-        version_mapping = _build_version_mapping(root_app)
-        if not version_mapping:
-            return
-        version_routes, for_check = tee(_search_routes(version_mapping))
-        hashes = {route.unique_id for route, *_ in for_check}
-        if self._latest_setup_routes == hashes:
-            return
 
-        routes = (
-            (route, version)
-            for route, min_version, max_version in version_routes
-            for version in range(min_version, max_version + 1)
-        )
-        for route, version in routes:
-            if not (app := version_mapping.get(version)):
+def rebuild_versioning(app: Starlette, *, rebuild_openapi: bool = True) -> None:
+    """Build (or explicitly rebuild) versioned routes of an application.
+
+    `VersioningMiddleware` calls this once on its first ASGI event. Call it
+    manually to pick up routes or versions added at runtime after that.
+
+    Args:
+        app (Starlette): The application that directly mounts the version sub-apps.
+        rebuild_openapi (bool, optional): Regenerate each version's OpenAPI schema
+            after inheritance. Defaults to `True`.
+
+    """
+    version_mapping = _build_version_mapping(app)
+    if not version_mapping:
+        return
+
+    for route, origin, until in _collect_versioned_routes(version_mapping):
+        for version in range(origin, until + 1):
+            target = version_mapping.get(version)
+            if target is None or route in target.router.routes:
                 continue
-            if route not in app.router.routes:
-                app.router.routes.append(route)
+            target.router.routes.append(route)
 
-        self._latest_setup_routes = hashes
-        if not self._rebuild_openapi:
-            return
-        for app in version_mapping.values():
-            app.openapi_schema = app.openapi()
-
-    @override
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        return await call_next(request)
+    if not rebuild_openapi:
+        return
+    for version_app in version_mapping.values():
+        version_app.openapi_schema = None
+        version_app.openapi_schema = version_app.openapi()
 
 
 def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
@@ -115,36 +94,34 @@ def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
     return dict(sorted(version_pairs, key=itemgetter(0)))
 
 
-def _search_routes(
+def _collect_versioned_routes(
     mapping: Mapping[int, FastAPI],
-) -> Iterable[tuple[APIRoute, int, int]]:
+) -> list[tuple[APIRoute, int, int]]:
     max_version = max(mapping)
 
-    routes = (
-        (version, route)
-        for version, app in mapping.items()
-        for route in app.routes
-        if isinstance(route, APIRoute)
-    )
+    collected = []
+    for version, version_app in mapping.items():
+        for route in version_app.routes:
+            if not isinstance(route, APIRoute):
+                continue
 
-    for version, route in routes:
-        dependencies = [
-            dependency.call
-            for dependency in route.dependant.dependencies
-            if isinstance(dependency.call, VersioningSupport)
-        ]
-        if not dependencies:
-            continue
+            supports = [
+                dependency.call
+                for dependency in route.dependant.dependencies
+                if isinstance(dependency.call, VersioningSupport)
+            ]
+            if not supports:
+                continue
 
-        until = reduce(
-            lambda acc, item: min(item, acc) if item is not None else acc,
-            (item.until for item in dependencies),
-            max_version,
-        )
+            declared = [
+                support.until for support in supports if support.until is not None
+            ]
+            until = min([*declared, max_version])
+            for support in supports:
+                if support.until is None:
+                    support.until = until
+                if support.origin is None:
+                    support.origin = version
 
-        for dependency in dependencies:
-            if dependency.until is None:
-                dependency.until = until
-            if dependency.origin is None:
-                dependency.origin = version
-            yield (route, version, until)
+            collected.append((route, version, until))
+    return collected

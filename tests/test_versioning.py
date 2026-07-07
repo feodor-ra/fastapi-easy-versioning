@@ -8,6 +8,7 @@ import pytest
 from src.fastapi_easy_versioning import (
     VersioningMiddleware,
     VersioningSupport,
+    rebuild_versioning,
     versioning,
 )
 
@@ -178,6 +179,32 @@ async def test_bool_api_version_is_not_a_version(
     response = await client.get("/v2/test")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.usefixtures("middleware_setup")
+async def test_runtime_routes_require_explicit_rebuild(
+    client: AsyncClient,
+    app: FastAPI,
+    v1: FastAPI,
+    v2: FastAPI,
+) -> None:
+    """Require versioning endpoint added at runtime after the first request.
+
+    Routes are built once on the first ASGI event: a runtime-added endpoint
+    is not inherited until `rebuild_versioning` is called explicitly, and the
+    explicit rebuild also refreshes the cached OpenAPI schema.
+    """
+    await client.get("/v1/warmup")
+    v1.router.add_api_route("/new", lambda: None, dependencies=[Depends(versioning())])
+
+    before_rebuild = await client.get("/v2/new")
+    rebuild_versioning(app)
+    after_rebuild = await client.get("/v2/new")
+
+    assert before_rebuild.status_code == HTTPStatus.NOT_FOUND
+    assert after_rebuild.status_code == HTTPStatus.OK
+    assert v2.openapi_schema is not None
+    assert "/new" in v2.openapi_schema["paths"]
 
 
 async def test_require_versioning_endpoint_without_openapi_rebuild(
