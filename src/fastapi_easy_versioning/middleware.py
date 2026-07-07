@@ -116,7 +116,7 @@ def _iter_api_routes(app: FastAPI) -> Iterator[_RouteView]:
         for route in app.routes:
             if isinstance(route, APIRoute):
                 yield _RouteView(
-                    route, route.path, set(route.methods), route.dependant, None
+                    route, route.path, set(route.methods or ()), route.dependant, None
                 )
         return
     for context in _iter_route_contexts(app.router.routes):

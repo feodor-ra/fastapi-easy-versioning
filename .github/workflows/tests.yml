@@ -49,3 +49,30 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: "coverage.lcov"
+  fastapi-compat:
+    name: FastAPI ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "0.95 (minimum supported)"
+            spec: "fastapi==0.95.*"
+          - label: "0.136 (last before router tree)"
+            spec: "fastapi==0.136.*"
+          - label: "latest"
+            spec: "fastapi"
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+        cache-dependency-glob: uv.lock
+    - name: Set up Python
+      run: uv python install 3.13
+    - name: Create venv, install dependencies
+      run: uv sync --group=test --frozen
+    - name: Test with pytest against ${{ matrix.spec }}
+      run: uv run --frozen --with "${{ matrix.spec }}" -m pytest --no-cov
