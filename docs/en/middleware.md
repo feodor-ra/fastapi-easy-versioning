@@ -1,7 +1,5 @@
 # Middleware
 
-!!! warning "The English documentation has been automatically translated. If you notice any grammatical or semantic errors, please help improve it by contributing corrections on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning), or refer to the original Russian documentation."
-
 The `VersioningMiddleware` handles the core functionality of API versioning.
 
 The middleware is added only to the FastAPI application that aggregates sub-applications responsible for specific versions.

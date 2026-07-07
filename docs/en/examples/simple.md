@@ -1,7 +1,5 @@
 # Simple Versioning Example
 
-!!! warning "The English documentation has been automatically translated. If you notice any grammatical or semantic errors, please help improve it by contributing corrections on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning), or refer to the original Russian documentation."
-
 The example is available on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
 
 To run it locally, clone the repository and execute the following command:

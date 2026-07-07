@@ -1,7 +1,5 @@
 # Versioning Dependency
 
-!!! warning "The English documentation has been automatically translated. If you notice any grammatical or semantic errors, please help improve it by contributing corrections on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning), or refer to the original Russian documentation."
-
 The `VersioningSupport` dependency and its factory `versioning` form the core mechanism for configuring and parameterizing API versioning.
 
 The `versioning` factory allows you to specify the API version up to which an endpoint will be included in subsequent FastAPI sub-applications. If the factory is called without arguments or with `None`, the endpoint will be present in all future versions of the API.

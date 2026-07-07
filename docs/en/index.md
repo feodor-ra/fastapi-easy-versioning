@@ -8,8 +8,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/feodor-ra/fastapi-easy-versioning/badge.svg?branch=master)](https://coveralls.io/github/feodor-ra/fastapi-easy-versioning?branch=master)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://feodor-ra.github.io/fastapi-easy-versioning/)
 
-!!! warning "The English documentation has been automatically translated. If you notice any grammatical or semantic errors, please help improve it by contributing corrections on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning), or refer to the original Russian documentation."
-
 This is a solution for building versioned APIs automatically using [FastAPI](https://fastapi.tiangolo.com). It enables automatic inheritance of endpoints from previous FastAPI sub-applications into newer versions based on configuration, and correctly reflects them in the OpenAPI schema.
 
 ## Installation
