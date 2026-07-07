@@ -3,7 +3,7 @@
 # carry no `__globals__` to evaluate postponed annotations against.
 from typing import Final, NamedTuple
 
-from fastapi import Request
+from fastapi.requests import HTTPConnection
 
 VERSION_INFOS_ATTR: Final = "_fastapi_easy_versioning_infos"
 """Attribute on a version app's `state` holding `dict[int, VersionInfo]`
@@ -25,10 +25,12 @@ class VersioningSupport:
     def __init__(self, *, until: int | None = None) -> None:
         self.until = until
 
-    async def __call__(self, request: Request) -> VersionInfo:
-        state = getattr(request.scope.get("app"), "state", None)
+    async def __call__(self, connection: HTTPConnection) -> VersionInfo:
+        state = getattr(connection.scope.get("app"), "state", None)
         infos: dict[int, VersionInfo] | None = getattr(state, VERSION_INFOS_ATTR, None)
-        info = infos.get(id(request.scope.get("route"))) if infos is not None else None
+        info = (
+            infos.get(id(connection.scope.get("route"))) if infos is not None else None
+        )
         if info is None:
             msg = (
                 "Versioning is not initialized for this route. Make sure that "

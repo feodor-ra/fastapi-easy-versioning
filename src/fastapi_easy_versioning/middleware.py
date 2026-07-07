@@ -11,7 +11,7 @@ import fastapi.routing
 # request_response must come from fastapi.routing, not starlette: it is the
 # exact function APIRoute.__init__ builds its handler with (newer FastAPI
 # ships its own copy that wires the dependencies' AsyncExitStack into scope).
-from fastapi.routing import APIRoute, request_response
+from fastapi.routing import APIRoute, APIWebSocketRoute, request_response
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
@@ -35,16 +35,20 @@ _iter_route_contexts: Callable[..., Any] | None = getattr(
 
 
 class _RouteView(NamedTuple):
-    """An APIRoute observed in a version app, with its effective properties."""
+    """A route observed in a version app, with its effective properties."""
 
-    route: APIRoute
-    """Original route object (what scope["route"] holds at request time)."""
+    route: Any
+    """APIRoute or APIWebSocketRoute (what scope["route"] holds at request
+    time; for a websocket route from an included router this is the
+    reconstructed `starlette_route` fastapi serves it with)."""
 
     path: str
     methods: set[str]
     dependant: Any
     context: Any
     """RouteContext the route was found through (None on pre-tree FastAPI)."""
+
+    is_websocket: bool
 
 
 class VersioningMiddleware:
@@ -116,7 +120,16 @@ def _iter_api_routes(app: FastAPI) -> Iterator[_RouteView]:
         for route in app.routes:
             if isinstance(route, APIRoute):
                 yield _RouteView(
-                    route, route.path, set(route.methods or ()), route.dependant, None
+                    route,
+                    route.path,
+                    set(route.methods or ()),
+                    route.dependant,
+                    None,
+                    is_websocket=False,
+                )
+            elif isinstance(route, APIWebSocketRoute):
+                yield _RouteView(
+                    route, route.path, set(), route.dependant, None, is_websocket=True
                 )
         return
     for context in _iter_route_contexts(app.router.routes):
@@ -128,17 +141,36 @@ def _iter_api_routes(app: FastAPI) -> Iterator[_RouteView]:
                 set(context.methods or ()),
                 context.dependant,
                 context,
+                is_websocket=False,
+            )
+        elif isinstance(route, APIWebSocketRoute):
+            # For an included websocket route the effective context is not
+            # populated; fastapi serves it through a reconstructed
+            # `starlette_route` (effective path, merged include-time
+            # dependencies) and puts that object into scope["route"].
+            source = getattr(context, "starlette_route", None) or route
+            yield _RouteView(
+                source,
+                source.path,
+                set(),
+                source.dependant,
+                context,
+                is_websocket=True,
             )
 
 
 def _has_route(app: FastAPI, view: _RouteView) -> bool:
     return any(
-        existing.path == view.path and existing.methods & view.methods
+        existing.is_websocket == view.is_websocket
+        and existing.path == view.path
+        and (view.is_websocket or existing.methods & view.methods)
         for existing in _iter_api_routes(app)
     )
 
 
-def _inherit_route(view: _RouteView, target: FastAPI) -> APIRoute:
+def _inherit_route(view: _RouteView, target: FastAPI) -> APIRoute | APIWebSocketRoute:
+    if view.is_websocket:
+        return _inherit_websocket_route(view, target)
     route, context = view.route, view.context
     if context is None or (
         context.path == route.path and context.dependant is route.dependant
@@ -180,6 +212,21 @@ def _inherit_route(view: _RouteView, target: FastAPI) -> APIRoute:
         generate_unique_id_function=context.generate_unique_id_function,
         dependency_overrides_provider=target,
     )
+
+
+def _inherit_websocket_route(view: _RouteView, target: FastAPI) -> APIWebSocketRoute:
+    # The constructor rebuilds the dependant and handler itself, and for a
+    # route from an included router `view.route` is already the standalone
+    # reconstruction with the effective path and merged dependencies.
+    source = view.route
+    kwargs: dict[str, Any] = {
+        "name": source.name,
+        "dependency_overrides_provider": target,
+    }
+    dependencies = getattr(source, "dependencies", None)
+    if dependencies is not None:  # the kwarg does not exist on fastapi 0.95
+        kwargs["dependencies"] = list(dependencies)
+    return APIWebSocketRoute(view.path, source.endpoint, **kwargs)
 
 
 def _infos_of(app: FastAPI) -> dict[int, VersionInfo]:
