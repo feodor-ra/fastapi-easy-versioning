@@ -128,6 +128,58 @@ async def test_require_versioning_endpoint_from_app_without_extra(
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
+@pytest.mark.usefixtures("middleware_setup")
+async def test_version_zero_survives_rebuild(
+    client: AsyncClient,
+    app: FastAPI,
+    v1: FastAPI,
+) -> None:
+    """Require versioning endpoint declared in version 0 twice with rebuild between.
+
+    Version 0 is a valid api_version and origin must stay 0 after a rebuild.
+    """
+    v0 = FastAPI(api_version=0)
+    app.mount("/v0", v0)
+
+    def endpoint(
+        version: Annotated[VersioningSupport, Depends(versioning())],
+    ) -> dict[str, int]:
+        return {"origin": version.origin, "until": version.until}
+
+    v0.router.add_api_route("/test", endpoint)
+
+    first = await client.get("/v0/test")
+    v1.router.add_api_route("/new", lambda: None, dependencies=[Depends(versioning())])
+    second = await client.get("/v0/test")
+
+    assert first.status_code == HTTPStatus.OK
+    assert first.json() == {"origin": 0, "until": 1}
+    assert second.status_code == HTTPStatus.OK
+    assert second.json() == {"origin": 0, "until": 1}
+
+
+@pytest.mark.usefixtures("v2", "middleware_setup")
+async def test_bool_api_version_is_not_a_version(
+    client: AsyncClient,
+    app: FastAPI,
+) -> None:
+    """Try require versioning endpoint from an app with bool api_version.
+
+    bool is not a version number (True must not be treated as version 1),
+    so the endpoint is not inherited anywhere.
+    """
+    fake = FastAPI(api_version=True)
+    app.mount("/fake", fake)
+
+    def endpoint(_: Annotated[VersioningSupport, Depends(versioning())]) -> None: ...
+
+    fake.router.add_api_route("/test", endpoint)
+
+    response = await client.get("/v2/test")
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
 async def test_require_versioning_endpoint_without_openapi_rebuild(
     client: AsyncClient, app: FastAPI, v1: FastAPI, v2: FastAPI
 ) -> None:

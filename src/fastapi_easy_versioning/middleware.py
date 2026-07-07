@@ -109,6 +109,7 @@ def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
             isinstance(route, Mount)
             and isinstance(route.app, FastAPI)
             and isinstance(version := route.app.extra.get(API_VERSION_KEY), int)
+            and not isinstance(version, bool)
         )
     )
     return dict(sorted(version_pairs, key=itemgetter(0)))
@@ -142,6 +143,8 @@ def _search_routes(
         )
 
         for dependency in dependencies:
-            dependency.until = dependency.until or until
-            dependency.origin = dependency.origin or version
+            if dependency.until is None:
+                dependency.until = until
+            if dependency.origin is None:
+                dependency.origin = version
             yield (route, version, until)
