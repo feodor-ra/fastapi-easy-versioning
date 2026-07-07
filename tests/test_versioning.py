@@ -194,6 +194,28 @@ async def test_router_level_versioning_does_not_leak_until(
 
 
 @pytest.mark.usefixtures("middleware_setup")
+async def test_included_router_with_prefix_is_inherited(
+    client: AsyncClient,
+    v1: FastAPI,
+    v2: FastAPI,
+) -> None:
+    """Include a router with prefixes and require its endpoint from next version.
+
+    The effective path (router prefix + include prefix) must be inherited
+    into the newer version both at runtime and in the OpenAPI schema.
+    """
+    router = APIRouter(prefix="/sub")
+    router.add_api_route("/test", lambda: None, dependencies=[Depends(versioning())])
+    v1.include_router(router, prefix="/nested")
+
+    response = await client.get("/v2/nested/sub/test")
+
+    assert response.status_code == HTTPStatus.OK
+    assert v2.openapi_schema is not None
+    assert "/nested/sub/test" in v2.openapi_schema["paths"]
+
+
+@pytest.mark.usefixtures("middleware_setup")
 async def test_shared_router_reports_declaring_version(
     client: AsyncClient,
     v1: FastAPI,

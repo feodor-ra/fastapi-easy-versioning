@@ -5,7 +5,10 @@ from typing import Final, NamedTuple
 
 from fastapi import Request
 
-VERSION_INFO_ATTR: Final = "_fastapi_easy_versioning_info"
+VERSION_INFOS_ATTR: Final = "_fastapi_easy_versioning_infos"
+"""Attribute on a version app's `state` holding `dict[int, VersionInfo]`
+keyed by `id()` of the route object (routes are shared between versions
+since the FastAPI 0.137 router-tree refactor and are not hashable)."""
 
 
 class VersionInfo(NamedTuple):
@@ -23,9 +26,9 @@ class VersioningSupport:
         self.until = until
 
     async def __call__(self, request: Request) -> VersionInfo:
-        info: VersionInfo | None = getattr(
-            request.scope.get("route"), VERSION_INFO_ATTR, None
-        )
+        state = getattr(request.scope.get("app"), "state", None)
+        infos: dict[int, VersionInfo] | None = getattr(state, VERSION_INFOS_ATTR, None)
+        info = infos.get(id(request.scope.get("route"))) if infos is not None else None
         if info is None:
             msg = (
                 "Versioning is not initialized for this route. Make sure that "

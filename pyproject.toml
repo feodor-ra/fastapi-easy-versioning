@@ -6,7 +6,9 @@ readme = "README.md"
 authors = [{ name = "Fedor Ratschew", email = "feodor.ra@me.com" }]
 requires-python = ">=3.10,<4"
 dependencies = [
-    "fastapi>=0.95.0",
+    # 0.137.0/0.137.1 are excluded: the router-tree refactor landed in
+    # 0.137.0 but the public iter_route_contexts API only in 0.137.2.
+    "fastapi>=0.95.0,!=0.137.0,!=0.137.1",
 ]
 license = { file = "LICENSE" }
 classifiers = [

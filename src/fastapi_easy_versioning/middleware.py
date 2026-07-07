@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import copy
 from operator import itemgetter
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 import warnings
 
 from fastapi import FastAPI
+import fastapi.routing
 
 # request_response must come from fastapi.routing, not starlette: it is the
 # exact function APIRoute.__init__ builds its handler with (newer FastAPI
@@ -14,14 +15,36 @@ from fastapi.routing import APIRoute, request_response
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from .dependency import VERSION_INFO_ATTR, VersionInfo, VersioningSupport
+from .dependency import VERSION_INFOS_ATTR, VersionInfo, VersioningSupport
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping  # pragma: no cover
+    from collections.abc import Callable, Iterator, Mapping  # pragma: no cover
 
     from starlette.types import ASGIApp, Receive, Scope, Send  # pragma: no cover
 
 API_VERSION_KEY: Final = "api_version"
+
+# Public route-tree iteration API. Since the 0.137 router refactor
+# include_router no longer copies routes into a flat list: router.routes
+# holds private tree nodes and iter_route_contexts (fastapi >= 0.137.2) is
+# the supported way to walk them. On older FastAPI the attribute is absent
+# and the flat scan below is used instead.
+_iter_route_contexts: Callable[..., Any] | None = getattr(
+    fastapi.routing, "iter_route_contexts", None
+)
+
+
+class _RouteView(NamedTuple):
+    """An APIRoute observed in a version app, with its effective properties."""
+
+    route: APIRoute
+    """Original route object (what scope["route"] holds at request time)."""
+
+    path: str
+    methods: set[str]
+    dependant: Any
+    context: Any
+    """RouteContext the route was found through (None on pre-tree FastAPI)."""
 
 
 class VersioningMiddleware:
@@ -72,12 +95,14 @@ def rebuild_versioning(app: Starlette, *, rebuild_openapi: bool = True) -> None:
     if not version_mapping:
         return
 
-    for route, origin, until in _collect_versioned_routes(version_mapping):
+    for view, origin, until in _collect_versioned_routes(version_mapping):
         for version in range(origin + 1, until + 1):
             target = version_mapping.get(version)
-            if target is None or _has_route(target, route):
+            if target is None or _has_route(target, view):
                 continue
-            target.router.routes.append(_inherit_route(route, target))
+            inherited = _inherit_route(view, target)
+            _infos_of(target)[id(inherited)] = VersionInfo(origin=origin, until=until)
+            target.router.routes.append(inherited)
 
     if not rebuild_openapi:
         return
@@ -86,20 +111,83 @@ def rebuild_versioning(app: Starlette, *, rebuild_openapi: bool = True) -> None:
         version_app.openapi_schema = version_app.openapi()
 
 
-def _has_route(app: FastAPI, route: APIRoute) -> bool:
+def _iter_api_routes(app: FastAPI) -> Iterator[_RouteView]:
+    if _iter_route_contexts is None:  # pragma: no cover - fastapi < 0.137.2
+        for route in app.routes:
+            if isinstance(route, APIRoute):
+                yield _RouteView(
+                    route, route.path, set(route.methods), route.dependant, None
+                )
+        return
+    for context in _iter_route_contexts(app.router.routes):
+        route = context.original_route
+        if isinstance(route, APIRoute):
+            yield _RouteView(
+                route,
+                context.path,
+                set(context.methods or ()),
+                context.dependant,
+                context,
+            )
+
+
+def _has_route(app: FastAPI, view: _RouteView) -> bool:
     return any(
-        isinstance(existing, APIRoute)
-        and existing.path == route.path
-        and existing.methods & route.methods
-        for existing in app.router.routes
+        existing.path == view.path and existing.methods & view.methods
+        for existing in _iter_api_routes(app)
     )
 
 
-def _inherit_route(route: APIRoute, target: FastAPI) -> APIRoute:
-    inherited = copy.copy(route)
-    inherited.dependency_overrides_provider = target
-    inherited.app = request_response(inherited.get_route_handler())
-    return inherited
+def _inherit_route(view: _RouteView, target: FastAPI) -> APIRoute:
+    route, context = view.route, view.context
+    if context is None or (
+        context.path == route.path and context.dependant is route.dependant
+    ):
+        # The route is served as-is (no include-time prefix/dependencies
+        # applied on top), so a shallow copy keeps everything.
+        inherited = copy.copy(route)
+        inherited.dependency_overrides_provider = target
+        inherited.app = request_response(inherited.get_route_handler())
+        return inherited
+    # The route comes from an included router: copying the original would
+    # lose the include context (prefix, dependencies, tags, ...), so build
+    # a standalone route from the effective properties instead.
+    return APIRoute(
+        path=context.path,
+        endpoint=context.endpoint,
+        response_model=context.response_model,
+        status_code=context.status_code,
+        tags=list(context.tags or []),
+        dependencies=list(context.dependencies or []),
+        summary=context.summary,
+        description=context.description,
+        response_description=context.response_description,
+        responses=dict(context.responses or {}),
+        deprecated=context.deprecated,
+        methods=sorted(context.methods or ()),
+        operation_id=context.operation_id,
+        response_model_include=context.response_model_include,
+        response_model_exclude=context.response_model_exclude,
+        response_model_by_alias=context.response_model_by_alias,
+        response_model_exclude_unset=context.response_model_exclude_unset,
+        response_model_exclude_defaults=context.response_model_exclude_defaults,
+        response_model_exclude_none=context.response_model_exclude_none,
+        include_in_schema=context.include_in_schema,
+        response_class=context.response_class,
+        name=context.name,
+        callbacks=context.callbacks,
+        openapi_extra=context.openapi_extra,
+        generate_unique_id_function=context.generate_unique_id_function,
+        dependency_overrides_provider=target,
+    )
+
+
+def _infos_of(app: FastAPI) -> dict[int, VersionInfo]:
+    infos = getattr(app.state, VERSION_INFOS_ATTR, None)
+    if infos is None:
+        infos = {}
+        setattr(app.state, VERSION_INFOS_ATTR, infos)
+    return infos
 
 
 def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
@@ -126,18 +214,16 @@ def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
 
 def _collect_versioned_routes(
     mapping: Mapping[int, FastAPI],
-) -> list[tuple[APIRoute, int, int]]:
+) -> list[tuple[_RouteView, int, int]]:
     max_version = max(mapping)
 
     collected = []
     for version, version_app in mapping.items():
-        for route in version_app.routes:
-            if not isinstance(route, APIRoute):
-                continue
-
+        infos = _infos_of(version_app)
+        for view in _iter_api_routes(version_app):
             supports = [
                 dependency.call
-                for dependency in route.dependant.dependencies
+                for dependency in view.dependant.dependencies
                 if isinstance(dependency.call, VersioningSupport)
             ]
             if not supports:
@@ -147,16 +233,16 @@ def _collect_versioned_routes(
                 support.until for support in supports if support.until is not None
             ]
             until = min([*declared, max_version])
-            previous = getattr(route, VERSION_INFO_ATTR, None)
-            origin = previous.origin if isinstance(previous, VersionInfo) else version
+            previous = infos.get(id(view.route))
+            origin = previous.origin if previous is not None else version
             if until < origin:
                 warnings.warn(
-                    f"Route {route.path!r} is declared in version {origin} "
+                    f"Route {view.path!r} is declared in version {origin} "
                     f"but versioned until={until}; it will not be inherited "
                     "anywhere.",
                     stacklevel=2,
                 )
-            setattr(route, VERSION_INFO_ATTR, VersionInfo(origin=origin, until=until))
+            infos[id(view.route)] = VersionInfo(origin=origin, until=until)
 
-            collected.append((route, origin, until))
+            collected.append((view, origin, until))
     return collected
