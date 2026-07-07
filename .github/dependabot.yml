@@ -11,17 +11,6 @@ updates:
       interval: "weekly"
     allow:
       - dependency-type: "development"
-    # These releases dropped Python 3.9; the project still targets >=3.9, so uv
-    # cannot resolve them and Dependabot errors out (dependency_file_not_resolvable).
-    # Ignore the 3.9-incompatible versions — patch bumps within the 3.9 line still
-    # flow. Remove these entries once Python 3.9 support is dropped.
-    ignore:
-      - dependency-name: "pre-commit"
-        versions: [">=4.4.0"]
-      - dependency-name: "anyio"
-        versions: [">=4.13.0"]
-      - dependency-name: "pytest"
-        versions: [">=9.0.0"]
     versioning-strategy: increase
     # Collapse all the dev-dependency bumps into a single weekly PR.
     groups:

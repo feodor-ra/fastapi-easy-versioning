@@ -1,8 +1,7 @@
 # No `from __future__ import annotations` here: FastAPI resolves the
-# annotations of a callable-instance dependency (`VersioningSupport.__call__`)
-# at runtime and callable instances carry no `__globals__` to evaluate
-# postponed annotations against.
-from typing import Final, NamedTuple, Optional
+# annotations of `VersioningSupport.__call__` at runtime; callable instances
+# carry no `__globals__` to evaluate postponed annotations against.
+from typing import Final, NamedTuple
 
 from fastapi import Request
 
@@ -20,11 +19,11 @@ class VersionInfo(NamedTuple):
 
 
 class VersioningSupport:
-    def __init__(self, *, until: Optional[int] = None) -> None:
+    def __init__(self, *, until: int | None = None) -> None:
         self.until = until
 
     async def __call__(self, request: Request) -> VersionInfo:
-        info: Optional[VersionInfo] = getattr(
+        info: VersionInfo | None = getattr(
             request.scope.get("route"), VERSION_INFO_ATTR, None
         )
         if info is None:
@@ -39,7 +38,7 @@ class VersioningSupport:
         return info
 
 
-def versioning(*, until: Optional[int] = None) -> VersioningSupport:
+def versioning(*, until: int | None = None) -> VersioningSupport:
     """Dependency factory to mark endpoints as versioned.
 
     Usage:
