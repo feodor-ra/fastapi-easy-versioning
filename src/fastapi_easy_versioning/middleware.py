@@ -8,7 +8,7 @@ from fastapi.routing import APIRoute
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from .dependency import VersioningSupport
+from .dependency import VERSION_INFO_ATTR, VersionInfo, VersioningSupport
 
 if TYPE_CHECKING:
     from collections.abc import Mapping  # pragma: no cover
@@ -117,11 +117,9 @@ def _collect_versioned_routes(
                 support.until for support in supports if support.until is not None
             ]
             until = min([*declared, max_version])
-            for support in supports:
-                if support.until is None:
-                    support.until = until
-                if support.origin is None:
-                    support.origin = version
+            previous = getattr(route, VERSION_INFO_ATTR, None)
+            origin = previous.origin if isinstance(previous, VersionInfo) else version
+            setattr(route, VERSION_INFO_ATTR, VersionInfo(origin=origin, until=until))
 
-            collected.append((route, version, until))
+            collected.append((route, origin, until))
     return collected

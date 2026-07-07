@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, middleware
 from fastapi_easy_versioning import (
+    VersionInfo,
     VersioningMiddleware,
-    VersioningSupport,
     versioning,
 )
 
@@ -24,7 +24,7 @@ def endpoint() -> str:
 
 @app_v1.get("/another-endpoint")
 def another_endpoint(
-    version: Annotated[VersioningSupport, Depends(versioning())],
+    version: Annotated[VersionInfo, Depends(versioning())],
 ) -> str:
     return f"I'm v{version.origin} another endpoint"
 

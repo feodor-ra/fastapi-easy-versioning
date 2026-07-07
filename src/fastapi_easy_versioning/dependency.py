@@ -1,23 +1,45 @@
-from __future__ import annotations
+# No `from __future__ import annotations` here: FastAPI resolves the
+# annotations of a callable-instance dependency (`VersioningSupport.__call__`)
+# at runtime and callable instances carry no `__globals__` to evaluate
+# postponed annotations against.
+from typing import Any, Callable, Final, NamedTuple, Optional
 
-from typing import Any, Callable
+from fastapi import Request
 
-from typing_extensions import Self
+VERSION_INFO_ATTR: Final = "_fastapi_easy_versioning_info"
+
+
+class VersionInfo(NamedTuple):
+    """Resolved versioning metadata of an endpoint."""
+
+    origin: int
+    """The version that declared the endpoint."""
+
+    until: int
+    """The last version the endpoint is available in."""
 
 
 class VersioningSupport:
-    def __init__(self, *, until: int | None = None) -> None:
-        self.origin: int | None = None
+    def __init__(self, *, until: Optional[int] = None) -> None:
         self.until = until
 
-    def __call__(self) -> Self:
-        if self.until is None or self.origin is None:
-            msg = "VersioningMiddleware not used"
+    async def __call__(self, request: Request) -> VersionInfo:
+        info: Optional[VersionInfo] = getattr(
+            request.scope.get("route"), VERSION_INFO_ATTR, None
+        )
+        if info is None:
+            msg = (
+                "Versioning is not initialized for this route. Make sure that "
+                "VersioningMiddleware is added to the application that mounts "
+                "the version sub-apps, the sub-app is created with "
+                "FastAPI(api_version=<int>), and the route is registered before "
+                "the first request (otherwise call rebuild_versioning)."
+            )
             raise RuntimeError(msg)
-        return self
+        return info
 
 
-def versioning(*, until: int | None = None) -> Callable[..., Any]:
+def versioning(*, until: Optional[int] = None) -> Callable[..., Any]:
     """Dependency factory to mark endpoints as versioned.
 
     Usage:
@@ -32,7 +54,7 @@ def versioning(*, until: int | None = None) -> Callable[..., Any]:
 
         # Or inject versioning metadata into the endpoint
         @router.get("/path")
-        def endpoint(data: Annotated[VersioningSupport, Depends(versioning())]):
+        def endpoint(data: Annotated[VersionInfo, Depends(versioning())]):
             from_version = data.origin
             end_supported_version = data.until
         ```

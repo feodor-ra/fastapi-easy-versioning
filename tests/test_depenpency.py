@@ -40,7 +40,7 @@ async def test_export_versioning_without_use_middleware(
 
     v1.router.add_api_route("/test", endpoint, name="test")
 
-    with pytest.raises(RuntimeError, match="VersioningMiddleware not used"):
+    with pytest.raises(RuntimeError, match="Versioning is not initialized"):
         await client.get(app.url_path_for("test"))
 
 

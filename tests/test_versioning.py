@@ -1,11 +1,12 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Response
+from fastapi import APIRouter, Depends, FastAPI, Response
 from httpx import AsyncClient
 import pytest
 
 from src.fastapi_easy_versioning import (
+    VersionInfo,
     VersioningMiddleware,
     VersioningSupport,
     rebuild_versioning,
@@ -143,7 +144,7 @@ async def test_version_zero_survives_rebuild(
     app.mount("/v0", v0)
 
     def endpoint(
-        version: Annotated[VersioningSupport, Depends(versioning())],
+        version: Annotated[VersionInfo, Depends(versioning())],
     ) -> dict[str, int]:
         return {"origin": version.origin, "until": version.until}
 
@@ -179,6 +180,59 @@ async def test_bool_api_version_is_not_a_version(
     response = await client.get("/v2/test")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.usefixtures("v2", "middleware_setup")
+async def test_router_level_versioning_does_not_leak_until(
+    client: AsyncClient,
+    v1: FastAPI,
+) -> None:
+    """Require sibling endpoints of a router with router-level versioning().
+
+    A per-route until on one endpoint must not leak into siblings through
+    the shared router-level dependency instance.
+    """
+    router = APIRouter(dependencies=[Depends(versioning())])
+    router.add_api_route(
+        "/limited", lambda: None, dependencies=[Depends(versioning(until=1))]
+    )
+    router.add_api_route("/forever", lambda: None)
+    v1.include_router(router)
+
+    limited = await client.get("/v2/limited")
+    forever = await client.get("/v2/forever")
+
+    assert limited.status_code == HTTPStatus.NOT_FOUND
+    assert forever.status_code == HTTPStatus.OK
+
+
+@pytest.mark.usefixtures("middleware_setup")
+async def test_shared_router_reports_declaring_version(
+    client: AsyncClient,
+    v1: FastAPI,
+    v2: FastAPI,
+) -> None:
+    """Include the same router into two versions and export origin from both.
+
+    Each version's own copy of the route must report the version it was
+    included into, not the state frozen by the first processed copy.
+    """
+    router = APIRouter()
+
+    def endpoint(
+        version: Annotated[VersionInfo, Depends(versioning())],
+    ) -> dict[str, int]:
+        return {"origin": version.origin}
+
+    router.add_api_route("/test", endpoint)
+    v1.include_router(router)
+    v2.include_router(router)
+
+    first = await client.get("/v1/test")
+    second = await client.get("/v2/test")
+
+    assert first.json() == {"origin": 1}
+    assert second.json() == {"origin": 2}
 
 
 @pytest.mark.usefixtures("middleware_setup")

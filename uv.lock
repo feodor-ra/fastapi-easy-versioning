@@ -567,7 +567,6 @@ version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
-    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -603,10 +602,7 @@ test = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.95.0" },
-    { name = "typing-extensions", specifier = ">=4.4.0" },
-]
+requires-dist = [{ name = "fastapi", specifier = ">=0.95.0" }]
 
 [package.metadata.requires-dev]
 dev = [

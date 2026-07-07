@@ -7,7 +7,6 @@ authors = [{ name = "Fedor Ratschew", email = "feodor.ra@me.com" }]
 requires-python = ">=3.9.0,<4"
 dependencies = [
     "fastapi>=0.95.0",
-    "typing-extensions>=4.4.0",
 ]
 license = { file = "LICENSE" }
 classifiers = [
@@ -101,6 +100,9 @@ known-third-party = ["fastapi_easy_versioning", "pytest"]
 [tool.ruff.lint.per-file-ignores]
 "examples/*" = ["INP001", "E501"]
 "tests/*" = ["S101", "PLR0913", "PLR0917"]
+# FastAPI cannot resolve postponed annotations of a callable-instance
+# dependency (no __globals__ on the instance), so no future import here.
+"src/fastapi_easy_versioning/dependency.py" = ["FA100"]
 
 [tool.ty.environment]
 python-version = "3.9"
