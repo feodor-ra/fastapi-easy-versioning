@@ -1,6 +1,8 @@
 # Пример простого версионирования
 
-Пример представлен в [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
+Пример демонстрирует базовый сценарий: три версии одного API, ограничение доступности через `until`, наследование эндпоинтов, чтение метаданных через `VersionInfo` и переопределение эндпоинта в новой версии.
+
+Код примера — в [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
 
 Для локального запуска необходимо склонировать репозиторий и выполнить следующую команду:
 

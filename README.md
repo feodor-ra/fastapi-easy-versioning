@@ -8,9 +8,19 @@
 [![Coverage Status](https://coveralls.io/repos/github/feodor-ra/fastapi-easy-versioning/badge.svg?branch=master)](https://coveralls.io/github/feodor-ra/fastapi-easy-versioning?branch=master)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://feodor-ra.github.io/fastapi-easy-versioning/)
 
-This is a solution for building versioned APIs automatically using [FastAPI](https://fastapi.tiangolo.com). It enables automatic inheritance of endpoints from previous FastAPI sub-applications into newer versions based on configuration, and correctly reflects them in the OpenAPI schema.
+A library for building versioned APIs with [FastAPI](https://fastapi.tiangolo.com). Each API version is a separate FastAPI sub-application mounted under a common application. The library automatically inherits endpoints from older versions into newer ones and rebuilds each version's OpenAPI schema, so every version's `/docs` always shows its complete, current set of endpoints.
 
 [Documentation](https://feodor-ra.github.io/fastapi-easy-versioning/)
+
+## Features
+
+- Endpoint inheritance between versions: declare an endpoint once and it is available in all subsequent versions.
+- Precise availability range control with the `until` parameter.
+- Redefining an endpoint in a newer version shadows the inherited one — both at runtime and in the OpenAPI schema.
+- HTTP and WebSocket endpoints are supported.
+- Versioning metadata (`origin`, `until`) is readable right inside the endpoint.
+- Several independent versioned APIs within one application.
+- The only runtime dependency is `fastapi` (versions from 0.95 up to the latest are supported).
 
 ## Installation
 
@@ -20,11 +30,12 @@ pip install fastapi-easy-versioning
 
 [PyPI](https://pypi.org/project/fastapi-easy-versioning/)
 
-## Usage
+## Quick Start
 
-To implement versioning, use the `VersioningMiddleware` and the dependency factory `versioning`.
+Versioning is built from two pieces that only work together:
 
-Example:
+- `VersioningMiddleware` — added to the application that mounts the versions;
+- `versioning()` — a dependency factory that marks an endpoint as versioned.
 
 ```python
 from fastapi import FastAPI, Depends
@@ -51,13 +62,21 @@ def from_v2() -> str:
     return "Available starting from v2 and in all future versions"
 ```
 
-The endpoint `/only-v1` is available only in version `v1` at `/v1/only-v1`.
-The endpoint `/from-v2` becomes available starting from version `v2` at `/v2/from-v2` and is automatically inherited in all subsequent versions.
-The endpoint `/all-versions`, defined in `v1`, is accessible at both `/v1/all-versions` and `/v2/all-versions` due to the inheritance mechanism.
+The result:
 
-Using the `versioning` dependency factory, you can specify the last version in which an endpoint remains available by setting the `until` parameter to a version number. If `until` is set to `None` or omitted, the endpoint will be available in the version it was declared and in all later versions.
+- `/v1/only-v1` responds while `/v2/only-v1` returns 404 — the endpoint is limited by `until=1`.
+- `/v1/all-versions` and `/v2/all-versions` both respond — the endpoint is declared in `v1` and inherited into `v2`.
+- `/v2/from-v2` responds while `/v1/from-v2` returns 404 — the endpoint only appeared in `v2`.
+- `/v1/docs` and `/v2/docs` show exactly the endpoints available in the corresponding version.
 
-To associate a sub-application with a specific version, use the `api_version` parameter when creating the `FastAPI` instance. It must be an integer. Sub-applications without the `api_version` parameter will be ignored during versioning processing; if `api_version` is present but is not an integer, the sub-application is also ignored and a `UserWarning` is emitted.
+## How It Works
+
+1. Each version is a `FastAPI(api_version=N)` sub-application mounted under a common application: `app.mount("/v1", app_v1)`. `api_version` must be an integer.
+2. On its first ASGI event (server startup or the first request) `VersioningMiddleware` builds the inheritance once: it copies the marked endpoints from older versions into newer ones and rebuilds each version's OpenAPI schema.
+3. Only endpoints with the `versioning()` dependency are inherited. An endpoint without it stays only in the version where it is declared.
+4. Every inheriting version receives its own copy of the route — changes in one version do not affect the others.
+
+More details — the `versioning` dependency, middleware behavior, adding routes at runtime, FastAPI version compatibility and complete examples — are in the [documentation](https://feodor-ra.github.io/fastapi-easy-versioning/).
 
 ---
 

@@ -1,6 +1,8 @@
 # Simple Versioning Example
 
-The example is available on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
+The example demonstrates the basic scenario: three versions of one API, availability limited with `until`, endpoint inheritance, reading metadata via `VersionInfo` and redefining an endpoint in a newer version.
+
+The example code is on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
 
 To run it locally, clone the repository and execute the following command:
 
