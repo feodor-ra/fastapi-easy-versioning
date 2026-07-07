@@ -28,19 +28,26 @@ Middleware mechanics (in `middleware.py`):
 
 ## Commands
 
-Toolchain is 100% `uv` (build backend is `uv_build`, no Makefile/tox/nox). `uv.lock` is committed; CI uses `--frozen`.
+Toolchain is 100% `uv` (build backend is `uv_build`, no Makefile/tox/nox). `uv.lock` is committed; CI uses `--frozen`. A `Justfile` wraps the common dev commands:
 
 ```bash
-uv sync                              # install (all default deps)
+just init   # uv sync — create venv + install all dev deps
+just test   # uv run -m pytest (coverage forced via addopts)
+just lint   # ruff check + ruff format --check + ty check src
+just fmt    # uv run ruff format
+just hooks  # uv run pre-commit run --all-files
+just docs   # uv run mkdocs serve
+just build  # uv build (sdist + wheel)
+```
+
+Raw `uv` equivalents (used directly in CI):
+
+```bash
 uv sync --group=test --frozen        # what CI does for tests
-uv run -m pytest                     # run tests (coverage is forced via addopts)
+uv run -m pytest                     # run tests
 uv run -m coverage lcov              # CI coverage step
-uv run ruff check                    # lint (NOTE: fix=true globally, auto-fixes)
-uv run ruff format                   # format (CI does NOT check format; pre-commit does)
-uv run ty check src                  # typecheck with ty (CI runs exactly this)
-uv run pre-commit run --all-files    # run all hooks
-uv build                             # build sdist+wheel
-uv run mkdocs serve                  # docs preview
+uv run ruff check                    # lint
+uv run ty check src                  # typecheck
 uv version --bump patch              # bump version (patch|minor|major)
 ```
 
