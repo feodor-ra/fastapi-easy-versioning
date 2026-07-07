@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from operator import itemgetter
 from typing import TYPE_CHECKING, Final
+import warnings
 
 from fastapi import FastAPI
 
@@ -102,16 +103,24 @@ def _inherit_route(route: APIRoute, target: FastAPI) -> APIRoute:
 
 
 def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
-    version_pairs = (
-        (version, route.app)
-        for route in app.routes
-        if (
+    version_pairs = []
+    for route in app.routes:
+        if not (
             isinstance(route, Mount)
             and isinstance(route.app, FastAPI)
-            and isinstance(version := route.app.extra.get(API_VERSION_KEY), int)
-            and not isinstance(version, bool)
-        )
-    )
+            and API_VERSION_KEY in route.app.extra
+        ):
+            continue
+        version = route.app.extra[API_VERSION_KEY]
+        if isinstance(version, int) and not isinstance(version, bool):
+            version_pairs.append((version, route.app))
+        else:
+            warnings.warn(
+                f"Mounted app at {route.path!r} declares "
+                f"{API_VERSION_KEY}={version!r}, which is not an int; "
+                "the app is ignored by versioning.",
+                stacklevel=2,
+            )
     return dict(sorted(version_pairs, key=itemgetter(0)))
 
 
@@ -140,6 +149,13 @@ def _collect_versioned_routes(
             until = min([*declared, max_version])
             previous = getattr(route, VERSION_INFO_ATTR, None)
             origin = previous.origin if isinstance(previous, VersionInfo) else version
+            if until < origin:
+                warnings.warn(
+                    f"Route {route.path!r} is declared in version {origin} "
+                    f"but versioned until={until}; it will not be inherited "
+                    "anywhere.",
+                    stacklevel=2,
+                )
             setattr(route, VERSION_INFO_ATTR, VersionInfo(origin=origin, until=until))
 
             collected.append((route, origin, until))

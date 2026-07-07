@@ -168,7 +168,7 @@ async def test_bool_api_version_is_not_a_version(
     """Try require versioning endpoint from an app with bool api_version.
 
     bool is not a version number (True must not be treated as version 1),
-    so the endpoint is not inherited anywhere.
+    so the endpoint is not inherited anywhere and a warning is emitted.
     """
     fake = FastAPI(api_version=True)
     app.mount("/fake", fake)
@@ -177,7 +177,8 @@ async def test_bool_api_version_is_not_a_version(
 
     fake.router.add_api_route("/test", endpoint)
 
-    response = await client.get("/v2/test")
+    with pytest.warns(UserWarning, match="api_version=True"):
+        response = await client.get("/v2/test")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -317,6 +318,31 @@ async def test_runtime_routes_require_explicit_rebuild(
     assert after_rebuild.status_code == HTTPStatus.OK
     assert v2.openapi_schema is not None
     assert "/new" in v2.openapi_schema["paths"]
+
+
+def test_invalid_api_version_warns(app: FastAPI) -> None:
+    """Mount an app whose api_version is not an int and rebuild.
+
+    The mount is ignored, but a warning must point at it instead of silence.
+    """
+    app.mount("/broken", FastAPI(api_version="1"))
+
+    with pytest.warns(UserWarning, match="api_version='1'"):
+        rebuild_versioning(app)
+
+
+@pytest.mark.usefixtures("v1")
+def test_until_below_declaring_version_warns(app: FastAPI, v2: FastAPI) -> None:
+    """Declare an endpoint in version 2 versioned until version 1 and rebuild.
+
+    The contradictory until must produce a warning.
+    """
+    v2.router.add_api_route(
+        "/test", lambda: None, dependencies=[Depends(versioning(until=1))]
+    )
+
+    with pytest.warns(UserWarning, match="until=1"):
+        rebuild_versioning(app)
 
 
 async def test_require_versioning_endpoint_without_openapi_rebuild(

@@ -2,7 +2,7 @@
 # annotations of a callable-instance dependency (`VersioningSupport.__call__`)
 # at runtime and callable instances carry no `__globals__` to evaluate
 # postponed annotations against.
-from typing import Any, Callable, Final, NamedTuple, Optional
+from typing import Final, NamedTuple, Optional
 
 from fastapi import Request
 
@@ -39,7 +39,7 @@ class VersioningSupport:
         return info
 
 
-def versioning(*, until: Optional[int] = None) -> Callable[..., Any]:
+def versioning(*, until: Optional[int] = None) -> VersioningSupport:
     """Dependency factory to mark endpoints as versioned.
 
     Usage:
@@ -64,7 +64,7 @@ def versioning(*, until: Optional[int] = None) -> Callable[..., Any]:
             the endpoint remains available in all versions. Defaults to `None`.
 
     Returns:
-        function (Callable[..., Any]):
+        VersioningSupport:
             A dependency callable compatible with FastAPI's `Depends()`.
 
     """
