@@ -88,6 +88,23 @@ async def test_require_versioning_endpoint_after_until(
 
 
 @pytest.mark.usefixtures("middleware_setup")
+async def test_require_endpoint_without_any_versioned_mounts(
+    client: AsyncClient,
+    app: FastAPI,
+) -> None:
+    """Try require endpoint when middleware is set up but no versioned app is mounted.
+
+    This response 200 code instead of crashing every request.
+    """
+    app.mount("/sub", FastAPI())
+    app.router.add_api_route("/plain", lambda: None)
+
+    response = await client.get("/plain")
+
+    assert response.status_code == HTTPStatus.OK
+
+
+@pytest.mark.usefixtures("middleware_setup")
 async def test_require_versioning_endpoint_from_app_without_extra(
     client: AsyncClient,
     app: FastAPI,

@@ -70,6 +70,8 @@ class VersioningMiddleware(BaseHTTPMiddleware):
 
     def _build_versioning_routes(self, root_app: Starlette) -> None:
         version_mapping = _build_version_mapping(root_app)
+        if not version_mapping:
+            return
         version_routes, for_check = tee(_search_routes(version_mapping))
         hashes = {route.unique_id for route, *_ in for_check}
         if self._latest_setup_routes == hashes:
