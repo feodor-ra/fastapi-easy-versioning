@@ -39,21 +39,23 @@ v1_app.include_router(router)
 
 ## Получение данных из зависимости
 
-Зависимость можно внедрить в эндпоинт с использованием синтаксиса `Annotated` или традиционного механизма внедрения зависимостей.
+Зависимость можно внедрить в эндпоинт с использованием синтаксиса `Annotated` или традиционного механизма внедрения зависимостей. В эндпоинт внедряется именованный кортеж `VersionInfo` с разрешённой конфигурацией версионирования роута.
 
 ```python
 from fastapi import FastAPI, Depends
 from typing import Annotated
-from fastapi_easy_versioning import VersioningSupport, versioning
+from fastapi_easy_versioning import VersionInfo, versioning
 
 v1_app = FastAPI(api_version=1)
 
 @v1_app.get('/endpoint')
-def endpoint(version: Annotated[VersioningSupport, Depends(versioning())]) -> str:
+def endpoint(version: Annotated[VersionInfo, Depends(versioning())]) -> str:
     return f"Доступен с версии {version.origin} до версии {version.until}"
 ```
 
-В этом случае становится доступной конфигурация версионирования для чтения:
+Поля `VersionInfo`:
 
 - `origin` – номер версии, с которой был добавлен эндпоинт
 - `until` – номер версии, до которой включительно доступен эндпоинт. Если не указан явно, будет установлена последняя доступная версия API.
+
+Если `VersioningMiddleware` не подключён (или роут не был обработан версионированием), попытка внедрить данные завершится `RuntimeError` с описанием возможных причин.

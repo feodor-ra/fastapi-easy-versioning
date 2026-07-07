@@ -41,21 +41,23 @@ v1_app.include_router(router)
 
 ## Accessing Dependency Data
 
-The dependency can be injected into an endpoint using the `Annotated` syntax or the traditional dependency injection mechanism.
+The dependency can be injected into an endpoint using the `Annotated` syntax or the traditional dependency injection mechanism. The endpoint receives a `VersionInfo` named tuple with the route's resolved versioning configuration.
 
 ```python
 from fastapi import FastAPI, Depends
 from typing import Annotated
-from fastapi_easy_versioning import VersioningSupport, versioning
+from fastapi_easy_versioning import VersionInfo, versioning
 
 v1_app = FastAPI(api_version=1)
 
 @v1_app.get('/endpoint')
-def endpoint(version: Annotated[VersioningSupport, Depends(versioning())]) -> str:
+def endpoint(version: Annotated[VersionInfo, Depends(versioning())]) -> str:
     return f"Available from version {version.origin} to version {version.until}"
 ```
 
-This provides access to the versioning configuration for reading:
+`VersionInfo` fields:
 
 - `origin` – the version number from which the endpoint was added
 - `until` – the version number up to which the endpoint is available. If not specified explicitly, it will be set to the latest available API version.
+
+If `VersioningMiddleware` is not set up (or the route was not processed by versioning), injecting the data raises a `RuntimeError` describing the possible causes.

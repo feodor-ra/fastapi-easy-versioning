@@ -57,14 +57,14 @@ The endpoint `/all-versions`, defined in `v1`, is accessible at both `/v1/all-ve
 
 Using the `versioning` dependency factory, you can specify the last version in which an endpoint remains available by setting the `until` parameter to a version number. If `until` is set to `None` or omitted, the endpoint will be available in the version it was declared and in all later versions.
 
-To associate a sub-application with a specific version, use the `api_version` parameter when creating the `FastAPI` instance. It must be an integer. Sub-applications without the `api_version` parameter will be ignored during versioning processing.
+To associate a sub-application with a specific version, use the `api_version` parameter when creating the `FastAPI` instance. It must be an integer. Sub-applications without the `api_version` parameter will be ignored during versioning processing; if `api_version` is present but is not an integer, the sub-application is also ignored and a `UserWarning` is emitted.
 
 ---
 
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/.pre-commit-config.yaml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 [![Semantic Versions](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--versions-e10079.svg)](https://github.com/feodor-ra/fastapi-easy-versioning/releases)
 
 ![GitHub License](https://img.shields.io/github/license/feodor-ra/fastapi-easy-versioning)

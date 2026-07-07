@@ -46,13 +46,21 @@ private_app.mount("/v2", private_v2)
 
 ## Versioned Applications Configuration
 
-The middleware identifies which FastAPI applications participate in versioning using the `api_version` extra parameter. If an application doesn't have this parameter, it will be ignored during versioning: endpoints won't be added to it, and endpoints won't be taken from it, even if they were correctly marked with the `VersioningSupport` dependency.
+The middleware identifies which FastAPI applications participate in versioning using the `api_version` extra parameter (the `API_VERSION_KEY` constant). If an application doesn't have this parameter, it will be ignored during versioning: endpoints won't be added to it, and endpoints won't be taken from it, even if they were correctly marked with the `VersioningSupport` dependency. If `api_version` is present but is not an integer (for example, `"1"` or `True`), the application is also ignored and a `UserWarning` is emitted.
 
 ## Middleware Operation
 
-The middleware checks for versioned endpoints and sub-applications on the first request and adds endpoints to sub-applications according to their versioning settings, while also rebuilding the OpenAPI schema.
+The middleware builds versioning once — on its first ASGI event (under a real server that is the lifespan startup event; when mounted inside another application or in tests it is the first request). Endpoints of older versions are copied into subsequent sub-applications according to their versioning settings, and each version's OpenAPI schema is rebuilt. Subsequent requests perform no additional work.
 
-If you need to disable rebuilding the OpenAPI schema on request, you can do this when configuring the middleware by passing the `rebuild_openapi` parameter:
+Each version receives its own copy of the route:
+
+- mutating a route in one version does not affect other versions;
+- `dependency_overrides` are resolved by the application of the version serving the request;
+- if a newer version declares its own endpoint with the same path and methods, inheritance into it is skipped — the newer version shadows the older one both at runtime and in the OpenAPI schema.
+
+Only HTTP endpoints (`APIRoute`) are versioned — WebSocket routes are not inherited.
+
+If you need to disable rebuilding the OpenAPI schema, you can do this when configuring the middleware by passing the `rebuild_openapi` parameter:
 
 ```python
 from fastapi import Depends, FastAPI, middleware
@@ -66,4 +74,13 @@ app = FastAPI()
 app.add_middleware(VersioningMiddleware, rebuild_openapi=False)
 ```
 
-The middleware caches information about built endpoints and doesn't perform additional work on subsequent requests. However, if a versioned endpoint is added during runtime, it will be added to all relevant sub-applications on the next request, and their OpenAPI schemas will be rebuilt.
+## Adding Endpoints at Runtime
+
+A versioned endpoint or a new version added after the first request will not be picked up automatically. The public `rebuild_versioning` function exists for this: it rebuilds the inheritance and refreshes the versions' OpenAPI schemas.
+
+```python
+from fastapi_easy_versioning import rebuild_versioning
+
+# after adding routes or mounting a new version at runtime
+rebuild_versioning(app)  # app is the application that mounts the versions
+```

@@ -80,6 +80,6 @@ The endpoint `/all-versions`, defined in `v1`, is accessible at both `/v1/all-ve
 
 Using the `versioning` dependency factory, you can specify the last version in which an endpoint remains available by setting the `until` parameter to a version number. If `until` is set to `None` or omitted, the endpoint will be available in the version it was declared and in all later versions.
 
-To associate a sub-application with a specific version, use the `api_version` parameter when creating the `FastAPI` instance. It must be an integer. Sub-applications without the `api_version` parameter will be ignored during versioning processing.
+To associate a sub-application with a specific version, use the `api_version` parameter when creating the `FastAPI` instance. It must be an integer. Sub-applications without the `api_version` parameter will be ignored during versioning processing; if `api_version` is present but is not an integer, the sub-application is also ignored and a `UserWarning` is emitted.
 
 More examples are available in the **examples** section.

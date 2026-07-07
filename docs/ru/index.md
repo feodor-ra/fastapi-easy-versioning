@@ -78,7 +78,7 @@ graph TD
 
 С помощью фабрики зависимостей `versioning` можно указать, до какой версии включительно эндпоинт будет доступен, передав параметр `until` с номером версии. Если значение `until` установлено в `None` или не указано, эндпоинт будет доступен в той версии, где он объявлен, и во всех последующих.
 
-Чтобы указать, какое субприложение соответствует определённой версии, используйте параметр `api_version` при создании экземпляра `FastAPI`. Он должен быть целым числом. Если параметр `api_version` не задан, субприложение будет проигнорировано при обработке версионирования.
+Чтобы указать, какое субприложение соответствует определённой версии, используйте параметр `api_version` при создании экземпляра `FastAPI`. Он должен быть целым числом. Если параметр `api_version` не задан, субприложение будет проигнорировано при обработке версионирования; если параметр задан, но не является целым числом, субприложение также игнорируется, при этом выдаётся предупреждение `UserWarning`.
 
 Больше примеров доступно в разделе **примеры**.
 
@@ -87,7 +87,7 @@ graph TD
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/.pre-commit-config.yaml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 [![Semantic Versions](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--versions-e10079.svg)](https://github.com/feodor-ra/fastapi-easy-versioning/releases)
 
 ![GitHub License](https://img.shields.io/github/license/feodor-ra/fastapi-easy-versioning)
