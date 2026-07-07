@@ -74,6 +74,14 @@ app = FastAPI()
 app.add_middleware(VersioningMiddleware, rebuild_openapi=False)
 ```
 
+## FastAPI Compatibility
+
+- **FastAPI below 0.137** — supported: routes are walked via the flat `router.routes` list.
+- **FastAPI 0.137.0 and 0.137.1** — **excluded** by the package's dependency constraints: these versions already contain the routing refactor (`include_router` no longer copies routes, `router.routes` became a tree), but the public `iter_route_contexts` iteration API only appeared in 0.137.2.
+- **FastAPI 0.137.2 and newer** — supported: routes are walked via the public `iter_route_contexts`, so endpoints registered through `include_router` are versioned correctly, including include-time prefixes and dependencies.
+
+Compatibility is checked in CI against the minimum supported (0.95), the last pre-refactor (0.136) and the latest FastAPI versions.
+
 ## Adding Endpoints at Runtime
 
 A versioned endpoint or a new version added after the first request will not be picked up automatically. The public `rebuild_versioning` function exists for this: it rebuilds the inheritance and refreshes the versions' OpenAPI schemas.
