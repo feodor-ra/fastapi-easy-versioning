@@ -58,4 +58,23 @@ def endpoint(version: Annotated[VersionInfo, Depends(versioning())]) -> str:
 - `origin` – номер версии, с которой был добавлен эндпоинт
 - `until` – номер версии, до которой включительно доступен эндпоинт. Если не указан явно, будет установлена последняя доступная версия API.
 
+Инъекция работает и в WebSocket-эндпоинтах:
+
+```python
+from fastapi import FastAPI, Depends, WebSocket
+from typing import Annotated
+from fastapi_easy_versioning import VersionInfo, versioning
+
+v1_app = FastAPI(api_version=1)
+
+@v1_app.websocket('/ws')
+async def ws_endpoint(
+    websocket: WebSocket,
+    version: Annotated[VersionInfo, Depends(versioning())],
+) -> None:
+    await websocket.accept()
+    await websocket.send_text(f"Доступен с версии {version.origin}")
+    await websocket.close()
+```
+
 Если `VersioningMiddleware` не подключён (или роут не был обработан версионированием), попытка внедрить данные завершится `RuntimeError` с описанием возможных причин.

@@ -60,4 +60,23 @@ def endpoint(version: Annotated[VersionInfo, Depends(versioning())]) -> str:
 - `origin` – the version number from which the endpoint was added
 - `until` – the version number up to which the endpoint is available. If not specified explicitly, it will be set to the latest available API version.
 
+Injection also works in WebSocket endpoints:
+
+```python
+from fastapi import FastAPI, Depends, WebSocket
+from typing import Annotated
+from fastapi_easy_versioning import VersionInfo, versioning
+
+v1_app = FastAPI(api_version=1)
+
+@v1_app.websocket('/ws')
+async def ws_endpoint(
+    websocket: WebSocket,
+    version: Annotated[VersionInfo, Depends(versioning())],
+) -> None:
+    await websocket.accept()
+    await websocket.send_text(f"Available since version {version.origin}")
+    await websocket.close()
+```
+
 If `VersioningMiddleware` is not set up (or the route was not processed by versioning), injecting the data raises a `RuntimeError` describing the possible causes.

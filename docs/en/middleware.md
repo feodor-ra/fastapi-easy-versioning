@@ -58,7 +58,7 @@ Each version receives its own copy of the route:
 - `dependency_overrides` are resolved by the application of the version serving the request;
 - if a newer version declares its own endpoint with the same path and methods, inheritance into it is skipped — the newer version shadows the older one both at runtime and in the OpenAPI schema.
 
-Only HTTP endpoints (`APIRoute`) are versioned — WebSocket routes are not inherited.
+Both HTTP endpoints (`APIRoute`) and WebSocket endpoints (`APIWebSocketRoute`) are versioned with the same semantics (`until`, `origin`, shadowing, `rebuild_versioning`). Shadowing is kind-aware: an HTTP endpoint and a websocket on the same path do not conflict. A fastapi 0.95 nuance: WebSocket routes there have no `dependencies` parameter yet, so they can only be marked for versioning with a dependency in the endpoint signature.
 
 If you need to disable rebuilding the OpenAPI schema, you can do this when configuring the middleware by passing the `rebuild_openapi` parameter:
 
