@@ -23,6 +23,18 @@ if TYPE_CHECKING:
     from starlette.types import ASGIApp, Receive, Scope, Send  # pragma: no cover
 
 API_VERSION_KEY: Final = "api_version"
+"""Name of the `FastAPI()` keyword that declares a sub-app's API version.
+
+Unknown keywords land in `FastAPI.extra`, which is where the middleware reads
+this one from. The value must be an `int` (`0` is valid, `bool` is not); a
+sub-app without it — or with a value of another type, which also emits a
+`UserWarning` — takes no part in versioning.
+
+Usage:
+    ```python
+    app_v1 = FastAPI(api_version=1)  # or FastAPI(**{API_VERSION_KEY: 1})
+    ```
+"""
 
 # Public route-tree iteration API. Since the 0.137 router refactor
 # include_router no longer copies routes into a flat list: router.routes
@@ -58,7 +70,18 @@ class VersioningMiddleware:
     under a single FastAPI instance. On the first ASGI event it inherits versioned
     endpoints from older versions into newer ones and regenerates each version's
     OpenAPI schema. Requests themselves are routed by the mounts; use
-    `rebuild_versioning` to pick up routes added at runtime.
+    [`rebuild_versioning`][fastapi_easy_versioning.rebuild_versioning] to pick up
+    routes added at runtime.
+
+    Add it to the application that **directly mounts** the version sub-apps, never
+    to the sub-apps themselves. Several instances may coexist in one application
+    tree — each versions only the sub-apps mounted directly under its own app, so
+    independent APIs version separately.
+
+    Only endpoints marked with
+    [`versioning`][fastapi_easy_versioning.versioning] are inherited, and a
+    version that declares its own endpoint on the same path shadows the inherited
+    one — at runtime and in the OpenAPI schema alike.
 
     Usage:
         ```python
@@ -68,7 +91,19 @@ class VersioningMiddleware:
         app = FastAPI(middleware=[Middleware(VersioningMiddleware)])
         # or alternatively
         app.add_middleware(VersioningMiddleware)
+
+        app.mount("/v1", FastAPI(api_version=1))
+        app.mount("/v2", FastAPI(api_version=2))
         ```
+
+    Args:
+        app (ASGIApp): The wrapped application, supplied by `add_middleware` or
+            `Middleware` — do not pass it yourself.
+        rebuild_openapi (bool, optional): Regenerate each version's OpenAPI schema
+            after inheritance. With `False` the endpoints are still inherited and
+            served, but inherited ones do not show up in the version's `/docs`.
+            Defaults to `True`.
+
     """
 
     def __init__(self, app: ASGIApp, *, rebuild_openapi: bool = True) -> None:
@@ -86,8 +121,20 @@ class VersioningMiddleware:
 def rebuild_versioning(app: Starlette, *, rebuild_openapi: bool = True) -> None:
     """Build (or explicitly rebuild) versioned routes of an application.
 
-    `VersioningMiddleware` calls this once on its first ASGI event. Call it
-    manually to pick up routes or versions added at runtime after that.
+    [`VersioningMiddleware`][fastapi_easy_versioning.VersioningMiddleware] calls
+    this once on its first ASGI event — the lifespan startup under a real server,
+    the first request when the middleware sits on a mounted sub-app or in a test
+    client. Nothing is versioned before that, and anything registered afterwards
+    needs an explicit call:
+
+    ```python
+    app.mount("/v3", app_v3)
+    rebuild_versioning(app)
+    ```
+
+    The call is idempotent, and a default (undeclared) `until` is re-resolved
+    against the new latest version. An application that mounts no version sub-app
+    is a graceful no-op.
 
     Args:
         app (Starlette): The application that directly mounts the version sub-apps.
