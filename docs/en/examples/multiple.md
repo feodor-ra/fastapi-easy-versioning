@@ -1,18 +1,22 @@
+---
+title: Multiple APIs versioning
+---
+
 # Multiple APIs Versioning Example
 
 The example demonstrates two independent versioned APIs (public and private) inside one application: each aggregating sub-application gets its own `VersioningMiddleware`, and their versions do not affect each other.
 
 The example code is on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/multiple_versioning.py).
 
-To run it locally, clone the repository and execute the following command:
+!!! example "Run it locally"
 
-```bash
-git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
-```
+    ```bash
+    git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
+    ```
 
-```bash
-uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/multiple_versioning.py
-```
+    ```bash
+    uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/multiple_versioning.py
+    ```
 
 The example contains the following code:
 

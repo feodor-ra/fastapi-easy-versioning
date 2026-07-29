@@ -1,18 +1,22 @@
+---
+title: Версионирование нескольких API
+---
+
 # Пример версионирования нескольких API
 
 Пример демонстрирует два независимых версионированных API (public и private) внутри одного приложения: каждое агрегирующее субприложение получает собственный `VersioningMiddleware`, и их версии не влияют друг на друга.
 
 Код примера — в [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/multiple_versioning.py).
 
-Для локального запуска необходимо склонировать репозиторий и выполнить следующую команду:
+!!! example "Запустить локально"
 
-```bash
-git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
-```
+    ```bash
+    git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
+    ```
 
-```bash
-uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/multiple_versioning.py
-```
+    ```bash
+    uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/multiple_versioning.py
+    ```
 
 Пример содержит следующий код:
 

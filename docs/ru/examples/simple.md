@@ -1,18 +1,22 @@
+---
+title: Простое версионирование
+---
+
 # Пример простого версионирования
 
 Пример демонстрирует базовый сценарий: три версии одного API, ограничение доступности через `until`, наследование эндпоинтов, чтение метаданных через `VersionInfo` и переопределение эндпоинта в новой версии.
 
 Код примера — в [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
 
-Для локального запуска необходимо склонировать репозиторий и выполнить следующую команду:
+!!! example "Запустить локально"
 
-```bash
-git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
-```
+    ```bash
+    git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
+    ```
 
-```bash
-uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/simple_versioning.py
-```
+    ```bash
+    uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/simple_versioning.py
+    ```
 
 Пример содержит следующий код:
 

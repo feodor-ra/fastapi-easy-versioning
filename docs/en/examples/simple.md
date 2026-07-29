@@ -1,18 +1,22 @@
+---
+title: Simple versioning
+---
+
 # Simple Versioning Example
 
 The example demonstrates the basic scenario: three versions of one API, availability limited with `until`, endpoint inheritance, reading metadata via `VersionInfo` and redefining an endpoint in a newer version.
 
 The example code is on [GitHub](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/examples/simple_versioning.py).
 
-To run it locally, clone the repository and execute the following command:
+!!! example "Run it locally"
 
-```bash
-git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
-```
+    ```bash
+    git clone https://github.com/feodor-ra/fastapi-easy-versioning.git
+    ```
 
-```bash
-uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/simple_versioning.py
-```
+    ```bash
+    uvx --python=3.14 --from="fastapi[standard]" --with="fastapi-easy-versioning" fastapi dev fastapi-easy-versioning/examples/simple_versioning.py
+    ```
 
 The example contains the following code:
 
