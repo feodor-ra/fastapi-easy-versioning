@@ -84,28 +84,17 @@ graph TD
     A --> C[v2<br/>api_version=2]
     A --> D[v3<br/>api_version=3]
 
-    B --> B1["/endpoint ✓<br/>(until=2)"]
-    B --> B2["/another-endpoint ✓"]
+    B --> B1["/endpoint ✓<br/>(until=2)"]:::available
+    B --> B2["/another-endpoint ✓"]:::available
 
-    C --> C1["/endpoint ✓<br/>(until=2)"]
-    C --> C2["/another-endpoint ✓"]
-    C --> C3["/new-another-endpoint ✓"]
+    C --> C1["/endpoint ✓<br/>(until=2)"]:::available
+    C --> C2["/another-endpoint ✓"]:::available
+    C --> C3["/new-another-endpoint ✓"]:::available
 
-    D --> D1["/endpoint ✗<br/>(until=2)"]
-    D --> D2["/another-endpoint ✓<br/>(перекрыт в v3)"]
-    D --> D3["/new-another-endpoint ✓"]
+    D --> D1["/endpoint ✗<br/>(until=2)"]:::missing
+    D --> D2["/another-endpoint ✓<br/>(перекрыт в v3)"]:::available
+    D --> D3["/new-another-endpoint ✓"]:::available
 
-    style B1 fill:#90EE90,color:#1b1b1b
-    style B2 fill:#90EE90,color:#1b1b1b
-
-    style C1 fill:#90EE90,color:#1b1b1b
-    style C2 fill:#90EE90,color:#1b1b1b
-    style C3 fill:#90EE90,color:#1b1b1b
-
-    style D1 fill:#FFB6C1,color:#1b1b1b
-    style D2 fill:#90EE90,color:#1b1b1b
-    style D3 fill:#90EE90,color:#1b1b1b
-
-    classDef available fill:#90EE90,color:#1b1b1b,stroke:#333;
-    classDef notAvailable fill:#FFB6C1,color:#1b1b1b,stroke:#333;
+    classDef available fill:#90EE90,stroke:#333,color:#1b1b1b
+    classDef missing fill:#FFB6C1,stroke:#333,color:#1b1b1b
 ```

@@ -67,21 +67,16 @@ graph TD
     A --> B[v1]
     A --> C[v2]
 
-    B --> B1["/only-v1 ✓"]
-    B --> B2["/all-versions ✓"]
-    B --> B3["/from-v2 ✗"]
+    B --> B1["/only-v1 ✓"]:::available
+    B --> B2["/all-versions ✓"]:::available
+    B --> B3["/from-v2 ✗"]:::missing
 
-    C --> C1["/only-v1 ✗"]
-    C --> C2["/all-versions ✓"]
-    C --> C3["/from-v2 ✓"]
+    C --> C1["/only-v1 ✗"]:::missing
+    C --> C2["/all-versions ✓"]:::available
+    C --> C3["/from-v2 ✓"]:::available
 
-    style B1 fill:#90EE90,color:#1b1b1b
-    style B2 fill:#90EE90,color:#1b1b1b
-    style B3 fill:#FFB6C1,color:#1b1b1b
-
-    style C1 fill:#FFB6C1,color:#1b1b1b
-    style C2 fill:#90EE90,color:#1b1b1b
-    style C3 fill:#90EE90,color:#1b1b1b
+    classDef available fill:#90EE90,stroke:#333,color:#1b1b1b
+    classDef missing fill:#FFB6C1,stroke:#333,color:#1b1b1b
 ```
 
 ## Возможности

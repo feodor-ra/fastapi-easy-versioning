@@ -108,28 +108,17 @@ graph TD
     C --> C1[v1<br/>api_version=1]
     C --> C2[v2<br/>api_version=2]
 
-    B1 --> B11["/endpoint ✓<br/>(until=1)"]
-    B1 --> B12["/another-endpoint ✓"]
+    B1 --> B11["/endpoint ✓<br/>(until=1)"]:::available
+    B1 --> B12["/another-endpoint ✓"]:::available
 
-    B2 --> B21["/endpoint ✓<br/>(from v2)"]
-    B2 --> B22["/another-endpoint ✓"]
+    B2 --> B21["/endpoint ✓<br/>(from v2)"]:::available
+    B2 --> B22["/another-endpoint ✓"]:::available
 
-    C1 --> C11["/endpoint ✓<br/>(until=1)"]
-    C1 --> C12["/another-endpoint ✓"]
+    C1 --> C11["/endpoint ✓<br/>(until=1)"]:::available
+    C1 --> C12["/another-endpoint ✓"]:::available
 
-    C2 --> C21["/endpoint ✓<br/>(from v2)"]
-    C2 --> C22["/another-endpoint ✓"]
+    C2 --> C21["/endpoint ✓<br/>(from v2)"]:::available
+    C2 --> C22["/another-endpoint ✓"]:::available
 
-    style B11 fill:#90EE90,color:#1b1b1b
-    style B12 fill:#90EE90,color:#1b1b1b
-    style B21 fill:#90EE90,color:#1b1b1b
-    style B22 fill:#90EE90,color:#1b1b1b
-
-    style C11 fill:#90EE90,color:#1b1b1b
-    style C12 fill:#90EE90,color:#1b1b1b
-    style C21 fill:#90EE90,color:#1b1b1b
-    style C22 fill:#90EE90,color:#1b1b1b
-
-    classDef available fill:#90EE90,color:#1b1b1b,stroke:#333;
-    classDef notAvailable fill:#FFB6C1,color:#1b1b1b,stroke:#333;
+    classDef available fill:#90EE90,stroke:#333,color:#1b1b1b
 ```
