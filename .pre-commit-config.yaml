@@ -5,6 +5,9 @@ repos:
     - id: trailing-whitespace
     - id: end-of-file-fixer
     - id: check-yaml
+      # mkdocs.yml carries !!python/name: tags (emoji index, superfences format);
+      # --unsafe checks the syntax without trying to construct them.
+      args: [--unsafe]
     - id: check-toml
  - repo: https://github.com/astral-sh/ruff-pre-commit
    rev: v0.15.20
