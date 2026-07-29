@@ -1,0 +1,11 @@
+/* Mermaid version-availability diagrams: centred, never wider than the column. */
+.mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1.4rem 0;
+}
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}

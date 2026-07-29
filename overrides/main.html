@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{#- Context7 documentation chat widget. Extends Material's scripts block so the
+    third-party script keeps a custom data-library attribute (extra_javascript cannot). -#}
+{% block scripts %}
+  {{ super() }}
+  <script src="https://context7.com/widget.js" data-library="/feodor-ra/fastapi-easy-versioning"></script>
+{% endblock %}
