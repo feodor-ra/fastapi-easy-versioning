@@ -9,6 +9,20 @@ title: История изменений
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-07-29
+
+Функциональных изменений нет: библиотека ведёт себя ровно так же, как в 0.4.0.
+
+### Изменено
+
+- Docstrings публичного API существенно расширены — теперь в них описаны правила
+  разрешения `until`, однократность сборки и диагностика ошибок; именно их
+  показывает IDE при наведении. На них же построен новый авто-генерируемый
+  [справочник API](reference/dependency.md).
+- Метаданные пакета: заполнены `keywords`, `Homepage` переведён с репозитория на
+  сайт документации, добавлены ссылки `Issues` и `Changelog`.
+- Ограничение сборочного бэкенда расширено до `uv_build>=0.8.3,<0.12.0`.
+
 ## [0.4.0] — 2026-07-07
 
 ### Добавлено
@@ -69,6 +83,7 @@ title: История изменений
   FastAPI-субприложение на версию, наследование помеченных эндпоинтов из старых
   версий в новые и перестройка OpenAPI-схемы каждой версии.
 
+[0.4.1]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.1
 [0.4.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.0
 [0.3.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.3.0
 [0.2.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.2.0

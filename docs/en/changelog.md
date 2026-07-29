@@ -9,6 +9,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-07-29
+
+No functional changes: the library behaves exactly as in 0.4.0.
+
+### Changed
+
+- The docstrings of the public API were substantially expanded — they now spell
+  out the `until` resolution rules, the build-once behaviour and the diagnostics,
+  and they are what your IDE shows on hover. The same docstrings back the new
+  auto-generated [API reference](reference/dependency.md).
+- Package metadata: `keywords` filled in, `Homepage` repointed from the
+  repository to the documentation site, and `Issues` / `Changelog` URLs added.
+- The build backend requirement was widened to `uv_build>=0.8.3,<0.12.0`.
+
 ## [0.4.0] — 2026-07-07
 
 ### Added
@@ -69,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one FastAPI sub-application per version, inheritance of marked endpoints from
   older versions into newer ones, and a regenerated OpenAPI schema per version.
 
+[0.4.1]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.1
 [0.4.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.0
 [0.3.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.3.0
 [0.2.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.2.0
