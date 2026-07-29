@@ -93,6 +93,11 @@ plugins:
             Examples: Примеры
             API Reference: Справочник API
             Changelog: История изменений
+  # The reference pages exist in both locales, so every mkdocstrings identifier
+  # is registered twice; resolve_closest picks the one in the reader's language
+  # instead of warning about the ambiguity.
+  - autorefs:
+      resolve_closest: true
   - mkdocstrings:
       default_handler: python
       handlers:
