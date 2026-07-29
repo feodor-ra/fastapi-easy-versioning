@@ -1,0 +1,17 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "fastapi-easy-versioning",
+  "description": "Versioned APIs for FastAPI: one FastAPI sub-application per version, automatic inheritance of marked endpoints from older versions into newer ones, and a regenerated OpenAPI schema per version.",
+  "folders": ["docs/en"],
+  "excludeFolders": ["docs/en/reference"],
+  "rules": [
+    "Requires Python >= 3.10 and fastapi >=0.95.0,!=0.137.0,!=0.137.1; fastapi is the only runtime dependency.",
+    "A version is a FastAPI sub-application created with an api_version extra and mounted under an aggregating app: `app.mount('/v1', FastAPI(api_version=1))`. The value must be an int (0 is valid, bool is not); a sub-app without it takes no part in versioning.",
+    "Add VersioningMiddleware to the application that directly mounts the version sub-apps, never to the sub-apps themselves: `app.add_middleware(VersioningMiddleware)`. Several instances can coexist, one per aggregating app, so independent APIs version separately.",
+    "Versioning is opt-in: only endpoints carrying `Depends(versioning())` are inherited. Attach it per endpoint, via add_api_route, or on a whole APIRouter with `APIRouter(dependencies=[Depends(versioning())])`.",
+    "`versioning()` with no `until` means 'available through the latest version', not 'this version only'; `versioning(until=N)` caps availability at version N inclusive, and the smallest declared `until` wins when a route carries several markers.",
+    "Inject `Annotated[VersionInfo, Depends(versioning())]` into an endpoint to read the resolved `origin` and `until`; it works for WebSocket endpoints too.",
+    "Inheritance is built once, on the middleware's first ASGI event. Routes or versions added after that need an explicit `rebuild_versioning(app)`, which is idempotent.",
+    "Redefining an endpoint on the same path in a newer version shadows the inherited one, at runtime and in the OpenAPI schema; pass `rebuild_openapi=False` to keep inherited endpoints out of each version's /docs."
+  ]
+}
