@@ -2,10 +2,10 @@ name: Lints
 on:
   pull_request:
     branches: ["master"]
-    paths-ignore: ["docs/**", "README.md", "LICENSE"]
+    paths-ignore: ["docs/**", "README.md", "README.ru.md", "LICENSE"]
   push:
     branches: ["master"]
-    paths-ignore: ["docs/**", "README.md", "LICENSE"]
+    paths-ignore: ["docs/**", "README.md", "README.ru.md", "LICENSE"]
 jobs:
   lint:
     runs-on: ubuntu-latest
