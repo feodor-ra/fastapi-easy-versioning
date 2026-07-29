@@ -1,64 +1,65 @@
-# FastAPI Easy Versioning
+---
+title: Обзор
+---
 
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
-![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
-![Test results](https://github.com/feodor-ra/fastapi-easy-versioning/actions/workflows/tests.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/feodor-ra/fastapi-easy-versioning/badge.svg?branch=master)](https://coveralls.io/github/feodor-ra/fastapi-easy-versioning?branch=master)
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://feodor-ra.github.io/fastapi-easy-versioning/)
+# fastapi-easy-versioning
 
-Библиотека для построения версионированного API на [FastAPI](https://fastapi.tiangolo.com). Каждая версия API — отдельное FastAPI-субприложение, смонтированное под общим приложением. Библиотека автоматически наследует эндпоинты из старых версий в новые и перестраивает OpenAPI-схему каждой версии, поэтому `/docs` каждой версии всегда показывает её полный актуальный состав.
+**Версионированные API на FastAPI.** Одно субприложение на версию, автоматическое наследование эндпоинтов из старых версий в новые и своя актуальная OpenAPI-схема у каждой версии.
 
-## Возможности
+---
 
-- Наследование эндпоинтов между версиями: эндпоинт объявляется один раз и доступен во всех последующих версиях.
-- Точное управление диапазоном доступности через параметр `until`.
-- Переопределение эндпоинта в новой версии затеняет унаследованный — и в рантайме, и в OpenAPI-схеме.
-- Поддержка HTTP- и WebSocket-эндпоинтов.
-- Чтение метаданных версионирования (`origin`, `until`) прямо в эндпоинте.
-- Несколько независимых версионированных API в одном приложении.
-- Единственная рантайм-зависимость — `fastapi` (поддерживаются версии от 0.95 до новейших).
+## Зачем это нужно
 
-## Установка
+Когда API живёт в нескольких версиях, между ними приходится вручную копировать роуты: `/v2` должен отдавать всё, что отдавал `/v1`, кроме того, что осознанно выпилили. Копии расползаются, `/v1/docs` и `/v2/docs` начинают врать, а «в какой версии этот эндпоинт вообще есть» становится вопросом к `git blame`.
 
-```bash
-pip install fastapi-easy-versioning
-```
+`fastapi-easy-versioning` делает диапазон доступности **свойством эндпоинта**: объявляете его один раз, помечаете зависимостью — и он сам оказывается во всех последующих версиях.
 
-[PyPI](https://pypi.org/project/fastapi-easy-versioning/)
+=== "Было"
 
-## Быстрый старт
+    ```python
+    app_v1 = FastAPI()
+    app_v2 = FastAPI()
 
-Версионирование строится из двух частей, которые работают только вместе:
 
-- `VersioningMiddleware` — добавляется в приложение, монтирующее версии;
-- `versioning()` — фабрика зависимостей, помечающая эндпоинт как версионированный.
+    @app_v1.get("/items")
+    def items_v1() -> list[Item]:  # (1)!
+        return get_items()
 
-```python
-from fastapi import FastAPI, Depends
-from fastapi_easy_versioning import VersioningMiddleware, versioning
 
-app = FastAPI()
-app_v1 = FastAPI(api_version=1)
-app_v2 = FastAPI(api_version=2)
+    @app_v2.get("/items")
+    def items_v2() -> list[Item]:
+        return get_items()
+    ```
 
-app.mount("/v1", app_v1)
-app.mount("/v2", app_v2)
-app.add_middleware(VersioningMiddleware)
+    1. Один и тот же эндпоинт, продублированный руками. С каждой новой версией копий становится больше, и однажды одну из них забудут обновить.
 
-@app_v1.get('/only-v1', dependencies=[Depends(versioning(until=1))])
-def only_v1() -> str:
-    return "Я доступен только в версии v1"
+=== "Стало"
 
-@app_v1.get('/all-versions', dependencies=[Depends(versioning())])
-def all_versions() -> str:
-    return "Я доступен во всех версиях, начиная с v1"
+    ```python
+    app = FastAPI()
+    app.add_middleware(VersioningMiddleware)
+    app.mount("/v1", app_v1)
+    app.mount("/v2", app_v2)
 
-@app_v2.get('/from-v2', dependencies=[Depends(versioning())])
-def from_v2() -> str:
-    return "Я доступен начиная с версии v2 и во всех последующих"
-```
+
+    @app_v1.get("/items", dependencies=[Depends(versioning())])  # (1)!
+    def items() -> list[Item]:
+        return get_items()
+    ```
+
+    1. Объявлен один раз в v1 — и доступен в v2 и во всех будущих версиях. Схема `/v2/docs` собирается сама.
+
+=== "…с ограничением"
+
+    ```python
+    @app_v1.get("/legacy", dependencies=[Depends(versioning(until=2))])  # (1)!
+    def legacy() -> str:
+        return "уйдёт после v2"
+    ```
+
+    1. Доступен в v1 и v2, в v3 его уже нет — ни в рантайме, ни в схеме. Подробнее в [семантике `until`](guide/dependency.md#until).
+
+Каждая версия остаётся обычным FastAPI-приложением: свой роутинг, свой `/docs`, свои `dependency_overrides`.
 
 ```mermaid
 graph TD
@@ -83,32 +84,87 @@ graph TD
     style C3 fill:#90EE90
 ```
 
-В результате:
+## Возможности
 
-- `/v1/only-v1` отвечает, а `/v2/only-v1` возвращает 404 — эндпоинт ограничен `until=1`.
-- `/v1/all-versions` и `/v2/all-versions` отвечают оба — эндпоинт объявлен в `v1` и унаследован в `v2`.
-- `/v2/from-v2` отвечает, а `/v1/from-v2` возвращает 404 — эндпоинт появился только в `v2`.
-- `/v1/docs` и `/v2/docs` показывают ровно те эндпоинты, которые доступны в соответствующей версии.
+<div class="grid cards" markdown>
 
-## Как это работает
+-   :material-source-branch: **Наследование между версиями**
 
-1. Каждая версия — субприложение `FastAPI(api_version=N)`, смонтированное под общим приложением: `app.mount("/v1", app_v1)`. `api_version` должен быть целым числом.
-2. `VersioningMiddleware` при первом ASGI-событии (запуск сервера или первый запрос) один раз строит наследование: копирует помеченные эндпоинты из старых версий в новые и перестраивает OpenAPI-схему каждой версии.
-3. Наследуются только эндпоинты с зависимостью `versioning()`. Эндпоинт без неё остаётся только в той версии, где объявлен.
-4. Каждая наследующая версия получает собственную копию роута — изменения одной версии не влияют на другие.
+    ---
 
-## Разделы документации
+    Эндпоинт объявляется один раз и сам оказывается во всех последующих версиях. Каждая версия получает собственную копию роута.
 
-- [Зависимость `versioning`](dependency.md) — способы пометки эндпоинтов, семантика `until`, чтение метаданных в эндпоинте.
-- [Middleware](middleware.md) — куда добавлять, как работает наследование, OpenAPI, добавление роутов в рантайме, совместимость с версиями FastAPI.
-- Примеры: [простое версионирование](examples/simple.md), [несколько независимых API](examples/multiple.md).
+    [:octicons-arrow-right-24: Middleware](guide/middleware.md)
 
----
+-   :material-ray-end: **Точный диапазон доступности**
 
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/feodor-ra/fastapi-easy-versioning/blob/master/.pre-commit-config.yaml)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
-[![Semantic Versions](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--versions-e10079.svg)](https://github.com/feodor-ra/fastapi-easy-versioning/releases)
+    ---
 
-![GitHub License](https://img.shields.io/github/license/feodor-ra/fastapi-easy-versioning)
+    `until` задаёт последнюю версию, в которой эндпоинт доступен. Без него — «до последней версии», включая ещё не созданные.
+
+    [:octicons-arrow-right-24: Семантика until](guide/dependency.md#until)
+
+-   :material-layers-triple: **Переопределение затеняет**
+
+    ---
+
+    Свой эндпоинт на том же пути в новой версии перекрывает унаследованный — и в рантайме, и в OpenAPI.
+
+    [:octicons-arrow-right-24: Правила наследования](guide/middleware.md#inheritance)
+
+-   :material-file-document-check: **Честный `/docs` у каждой версии**
+
+    ---
+
+    После наследования OpenAPI-схема каждой версии перестраивается, поэтому Swagger показывает ровно её состав.
+
+    [:octicons-arrow-right-24: OpenAPI](guide/middleware.md#openapi)
+
+-   :material-transit-connection-variant: **HTTP и WebSocket**
+
+    ---
+
+    `APIRoute` и `APIWebSocketRoute` версионируются одинаково; метаданные версии читаются прямо в эндпоинте.
+
+    [:octicons-arrow-right-24: Зависимость](guide/dependency.md)
+
+-   :material-set-split: **Несколько независимых API**
+
+    ---
+
+    Public и private API в одном приложении версионируются раздельно — по одному middleware на каждое агрегирующее приложение.
+
+    [:octicons-arrow-right-24: Пример](examples/multiple.md)
+
+</div>
+
+## Установка
+
+=== "uv"
+
+    ```bash
+    uv add fastapi-easy-versioning
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install fastapi-easy-versioning
+    ```
+
+!!! info "Требования"
+
+    - Python **3.10+**
+    - FastAPI **≥ 0.95** (версии `0.137.0` и `0.137.1` исключены — см. [Ограничения](guide/limitations.md#fastapi))
+    - Больше ничего: `fastapi` — единственная рантайм-зависимость
+
+## Дальше
+
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch: **[Быстрый старт](quickstart.md)** — рабочее приложение за минуту.
+-   :material-book-open-variant: **[Руководство](guide/dependency.md)** — зависимость, middleware, рецепты, ограничения.
+-   :material-code-tags: **[Примеры](examples/simple.md)** — запускаемые приложения из репозитория.
+-   :material-api: **[Справочник API](reference/dependency.md)** — сигнатуры из docstrings.
+
+</div>

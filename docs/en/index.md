@@ -1,64 +1,65 @@
-# FastAPI Easy Versioning
+---
+title: Overview
+---
 
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
-![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
-![Test results](https://github.com/feodor-ra/fastapi-easy-versioning/actions/workflows/tests.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/feodor-ra/fastapi-easy-versioning/badge.svg?branch=master)](https://coveralls.io/github/feodor-ra/fastapi-easy-versioning?branch=master)
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://feodor-ra.github.io/fastapi-easy-versioning/)
+# fastapi-easy-versioning
 
-A library for building versioned APIs with [FastAPI](https://fastapi.tiangolo.com). Each API version is a separate FastAPI sub-application mounted under a common application. The library automatically inherits endpoints from older versions into newer ones and rebuilds each version's OpenAPI schema, so every version's `/docs` always shows its complete, current set of endpoints.
+**Versioned APIs for FastAPI.** One sub-application per version, automatic inheritance of endpoints from older versions into newer ones, and an up-to-date OpenAPI schema for every version.
 
-## Features
+---
 
-- Endpoint inheritance between versions: declare an endpoint once and it is available in all subsequent versions.
-- Precise availability range control with the `until` parameter.
-- Redefining an endpoint in a newer version shadows the inherited one — both at runtime and in the OpenAPI schema.
-- HTTP and WebSocket endpoints are supported.
-- Versioning metadata (`origin`, `until`) is readable right inside the endpoint.
-- Several independent versioned APIs within one application.
-- The only runtime dependency is `fastapi` (versions from 0.95 up to the latest are supported).
+## Why
 
-## Installation
+Once an API lives in several versions, routes have to be copied between them by hand: `/v2` must serve everything `/v1` served, minus what was deliberately dropped. The copies drift apart, `/v1/docs` and `/v2/docs` start lying, and "which versions is this endpoint even in?" becomes a question for `git blame`.
 
-```bash
-pip install fastapi-easy-versioning
-```
+`fastapi-easy-versioning` makes the availability range a **property of the endpoint**: declare it once, mark it with a dependency, and it shows up in every later version by itself.
 
-[PyPI](https://pypi.org/project/fastapi-easy-versioning/)
+=== "Before"
 
-## Quick Start
+    ```python
+    app_v1 = FastAPI()
+    app_v2 = FastAPI()
 
-Versioning is built from two pieces that only work together:
 
-- `VersioningMiddleware` — added to the application that mounts the versions;
-- `versioning()` — a dependency factory that marks an endpoint as versioned.
+    @app_v1.get("/items")
+    def items_v1() -> list[Item]:  # (1)!
+        return get_items()
 
-```python
-from fastapi import FastAPI, Depends
-from fastapi_easy_versioning import VersioningMiddleware, versioning
 
-app = FastAPI()
-app_v1 = FastAPI(api_version=1)
-app_v2 = FastAPI(api_version=2)
+    @app_v2.get("/items")
+    def items_v2() -> list[Item]:
+        return get_items()
+    ```
 
-app.mount("/v1", app_v1)
-app.mount("/v2", app_v2)
-app.add_middleware(VersioningMiddleware)
+    1. The same endpoint, duplicated by hand. Every new version adds another copy, and one day one of them will be left un-updated.
 
-@app_v1.get('/only-v1', dependencies=[Depends(versioning(until=1))])
-def only_v1() -> str:
-    return "Available only in version v1"
+=== "After"
 
-@app_v1.get('/all-versions', dependencies=[Depends(versioning())])
-def all_versions() -> str:
-    return "Available in all versions starting from v1"
+    ```python
+    app = FastAPI()
+    app.add_middleware(VersioningMiddleware)
+    app.mount("/v1", app_v1)
+    app.mount("/v2", app_v2)
 
-@app_v2.get('/from-v2', dependencies=[Depends(versioning())])
-def from_v2() -> str:
-    return "Available starting from v2 and in all future versions"
-```
+
+    @app_v1.get("/items", dependencies=[Depends(versioning())])  # (1)!
+    def items() -> list[Item]:
+        return get_items()
+    ```
+
+    1. Declared once in v1 — and available in v2 and every future version. The `/v2/docs` schema builds itself.
+
+=== "…with a limit"
+
+    ```python
+    @app_v1.get("/legacy", dependencies=[Depends(versioning(until=2))])  # (1)!
+    def legacy() -> str:
+        return "gone after v2"
+    ```
+
+    1. Available in v1 and v2, absent from v3 — at runtime and in the schema alike. See [the `until` semantics](guide/dependency.md#until).
+
+Every version stays an ordinary FastAPI application: its own routing, its own `/docs`, its own `dependency_overrides`.
 
 ```mermaid
 graph TD
@@ -83,22 +84,87 @@ graph TD
     style C3 fill:#90EE90
 ```
 
-The result:
+## Features
 
-- `/v1/only-v1` responds while `/v2/only-v1` returns 404 — the endpoint is limited by `until=1`.
-- `/v1/all-versions` and `/v2/all-versions` both respond — the endpoint is declared in `v1` and inherited into `v2`.
-- `/v2/from-v2` responds while `/v1/from-v2` returns 404 — the endpoint only appeared in `v2`.
-- `/v1/docs` and `/v2/docs` show exactly the endpoints available in the corresponding version.
+<div class="grid cards" markdown>
 
-## How It Works
+-   :material-source-branch: **Inheritance between versions**
 
-1. Each version is a `FastAPI(api_version=N)` sub-application mounted under a common application: `app.mount("/v1", app_v1)`. `api_version` must be an integer.
-2. On its first ASGI event (server startup or the first request) `VersioningMiddleware` builds the inheritance once: it copies the marked endpoints from older versions into newer ones and rebuilds each version's OpenAPI schema.
-3. Only endpoints with the `versioning()` dependency are inherited. An endpoint without it stays only in the version where it is declared.
-4. Every inheriting version receives its own copy of the route — changes in one version do not affect the others.
+    ---
 
-## Documentation Sections
+    An endpoint is declared once and lands in every later version on its own. Each version gets its own copy of the route.
 
-- [The `versioning` dependency](dependency.md) — ways to mark endpoints, `until` semantics, reading metadata inside the endpoint.
-- [Middleware](middleware.md) — where to add it, how inheritance works, OpenAPI, adding routes at runtime, FastAPI version compatibility.
-- Examples: [simple versioning](examples/simple.md), [multiple independent APIs](examples/multiple.md).
+    [:octicons-arrow-right-24: Middleware](guide/middleware.md)
+
+-   :material-ray-end: **An exact availability range**
+
+    ---
+
+    `until` sets the last version an endpoint is available in. Without it — "through the latest version", including ones that do not exist yet.
+
+    [:octicons-arrow-right-24: until semantics](guide/dependency.md#until)
+
+-   :material-layers-triple: **Redefinition shadows**
+
+    ---
+
+    An endpoint of your own on the same path in a newer version shadows the inherited one — at runtime and in OpenAPI.
+
+    [:octicons-arrow-right-24: Inheritance rules](guide/middleware.md#inheritance)
+
+-   :material-file-document-check: **An honest `/docs` per version**
+
+    ---
+
+    After inheritance every version's OpenAPI schema is regenerated, so Swagger shows exactly what that version serves.
+
+    [:octicons-arrow-right-24: OpenAPI](guide/middleware.md#openapi)
+
+-   :material-transit-connection-variant: **HTTP and WebSocket**
+
+    ---
+
+    `APIRoute` and `APIWebSocketRoute` are versioned alike; the version metadata is readable right inside the endpoint.
+
+    [:octicons-arrow-right-24: Dependency](guide/dependency.md)
+
+-   :material-set-split: **Several independent APIs**
+
+    ---
+
+    Public and private APIs in one application version separately — one middleware per aggregating application.
+
+    [:octicons-arrow-right-24: Example](examples/multiple.md)
+
+</div>
+
+## Install
+
+=== "uv"
+
+    ```bash
+    uv add fastapi-easy-versioning
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install fastapi-easy-versioning
+    ```
+
+!!! info "Requirements"
+
+    - Python **3.10+**
+    - FastAPI **≥ 0.95** (`0.137.0` and `0.137.1` are excluded — see [Limitations](guide/limitations.md#fastapi))
+    - Nothing else: `fastapi` is the only runtime dependency
+
+## Next
+
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch: **[Quickstart](quickstart.md)** — a working app in a minute.
+-   :material-book-open-variant: **[Guide](guide/dependency.md)** — dependency, middleware, recipes, limitations.
+-   :material-code-tags: **[Examples](examples/simple.md)** — runnable apps from the repository.
+-   :material-api: **[API Reference](reference/dependency.md)** — signatures from the docstrings.
+
+</div>
