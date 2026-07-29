@@ -95,17 +95,17 @@ graph TD
     D --> D2["/another-endpoint ✓<br/>(overridden in v3)"]
     D --> D3["/new-another-endpoint ✓"]
 
-    style B1 fill:#90EE90
-    style B2 fill:#90EE90
+    style B1 fill:#90EE90,color:#1b1b1b
+    style B2 fill:#90EE90,color:#1b1b1b
 
-    style C1 fill:#90EE90
-    style C2 fill:#90EE90
-    style C3 fill:#90EE90
+    style C1 fill:#90EE90,color:#1b1b1b
+    style C2 fill:#90EE90,color:#1b1b1b
+    style C3 fill:#90EE90,color:#1b1b1b
 
-    style D1 fill:#FFB6C1
-    style D2 fill:#90EE90
-    style D3 fill:#90EE90
+    style D1 fill:#FFB6C1,color:#1b1b1b
+    style D2 fill:#90EE90,color:#1b1b1b
+    style D3 fill:#90EE90,color:#1b1b1b
 
-    classDef available fill:#90EE90,stroke:#333;
-    classDef notAvailable fill:#FFB6C1,stroke:#333;
+    classDef available fill:#90EE90,color:#1b1b1b,stroke:#333;
+    classDef notAvailable fill:#FFB6C1,color:#1b1b1b,stroke:#333;
 ```

@@ -75,13 +75,13 @@ graph TD
     C --> C2["/all-versions ✓"]
     C --> C3["/from-v2 ✓"]
 
-    style B1 fill:#90EE90
-    style B2 fill:#90EE90
-    style B3 fill:#FFB6C1
+    style B1 fill:#90EE90,color:#1b1b1b
+    style B2 fill:#90EE90,color:#1b1b1b
+    style B3 fill:#FFB6C1,color:#1b1b1b
 
-    style C1 fill:#FFB6C1
-    style C2 fill:#90EE90
-    style C3 fill:#90EE90
+    style C1 fill:#FFB6C1,color:#1b1b1b
+    style C2 fill:#90EE90,color:#1b1b1b
+    style C3 fill:#90EE90,color:#1b1b1b
 ```
 
 ## Features

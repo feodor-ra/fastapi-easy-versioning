@@ -120,16 +120,16 @@ graph TD
     C2 --> C21["/endpoint ✓<br/>(from v2)"]
     C2 --> C22["/another-endpoint ✓"]
 
-    style B11 fill:#90EE90
-    style B12 fill:#90EE90
-    style B21 fill:#90EE90
-    style B22 fill:#90EE90
+    style B11 fill:#90EE90,color:#1b1b1b
+    style B12 fill:#90EE90,color:#1b1b1b
+    style B21 fill:#90EE90,color:#1b1b1b
+    style B22 fill:#90EE90,color:#1b1b1b
 
-    style C11 fill:#90EE90
-    style C12 fill:#90EE90
-    style C21 fill:#90EE90
-    style C22 fill:#90EE90
+    style C11 fill:#90EE90,color:#1b1b1b
+    style C12 fill:#90EE90,color:#1b1b1b
+    style C21 fill:#90EE90,color:#1b1b1b
+    style C22 fill:#90EE90,color:#1b1b1b
 
-    classDef available fill:#90EE90,stroke:#333;
-    classDef notAvailable fill:#FFB6C1,stroke:#333;
+    classDef available fill:#90EE90,color:#1b1b1b,stroke:#333;
+    classDef notAvailable fill:#FFB6C1,color:#1b1b1b,stroke:#333;
 ```
