@@ -1,8 +1,16 @@
+---
+title: Зависимость
+---
+
 # Зависимость для версионирования
 
-Фабрика `versioning()` — способ пометить эндпоинт как версионированный. Она возвращает экземпляр `VersioningSupport`, пригодный для использования в `Depends()`. Эндпоинт без такой зависимости в версионировании не участвует и остаётся только в той версии, где объявлен.
+Фабрика `versioning()` — способ пометить эндпоинт как версионированный. Она возвращает экземпляр `VersioningSupport`, пригодный для использования в `Depends()`.
 
-## Семантика `until`
+!!! info "Пометка обязательна"
+
+    Эндпоинт без этой зависимости в версионировании не участвует: он не наследуется в новые версии и остаётся только там, где объявлен. Это осознанный opt-in, а не умолчание.
+
+## Семантика `until` { #until }
 
 `versioning(*, until: int | None = None)` управляет диапазоном версий, в которых доступен эндпоинт:
 
@@ -16,6 +24,10 @@
 - Если у роута несколько `versioning`-зависимостей (например, одна на роутере и одна на эндпоинте), действует **минимальный** из указанных `until`.
 - `until` меньше версии, в которой объявлен эндпоинт, — противоречие: библиотека выдаст `UserWarning`, эндпоинт останется доступен в своей версии, но не будет унаследован никуда.
 
+!!! warning "`versioning()` — это не «только эта версия»"
+
+    Вызов без аргументов означает «доступен вплоть до последней версии», включая версии, смонтированные позже. Чтобы ограничить эндпоинт одной версией, укажите `until`, равный её номеру.
+
 ## Способы подключения
 
 Зависимость принимается везде, где FastAPI принимает зависимости:
@@ -26,18 +38,22 @@ from fastapi_easy_versioning import versioning
 
 v1_app = FastAPI(api_version=1)
 
+
 # На эндпоинте — через декоратор
-@v1_app.get('/endpoint', dependencies=[Depends(versioning())])
+@v1_app.get("/endpoint", dependencies=[Depends(versioning())])
 def endpoint() -> None: ...
 
+
 # Через add_api_route
-v1_app.add_api_route('/added', endpoint, dependencies=[Depends(versioning(until=2))])
+v1_app.add_api_route("/added", endpoint, dependencies=[Depends(versioning(until=2))])
 
 # Сразу на весь роутер — версионируются все его эндпоинты
 router = APIRouter(dependencies=[Depends(versioning())])
 
-@router.get('/router-endpoint')
+
+@router.get("/router-endpoint")
 def router_endpoint() -> None: ...
+
 
 v1_app.include_router(router)
 ```
@@ -57,7 +73,8 @@ from fastapi_easy_versioning import VersionInfo, versioning
 
 v1_app = FastAPI(api_version=1)
 
-@v1_app.get('/endpoint')
+
+@v1_app.get("/endpoint")
 def endpoint(version: Annotated[VersionInfo, Depends(versioning())]) -> str:
     return f"Доступен с версии {version.origin} до версии {version.until}"
 ```
@@ -72,7 +89,8 @@ from fastapi_easy_versioning import VersionInfo, versioning
 
 v1_app = FastAPI(api_version=1)
 
-@v1_app.websocket('/ws')
+
+@v1_app.websocket("/ws")
 async def ws_endpoint(
     websocket: WebSocket,
     version: Annotated[VersionInfo, Depends(versioning())],
@@ -82,10 +100,14 @@ async def ws_endpoint(
     await websocket.close()
 ```
 
-## Диагностика
+## Диагностика { #diagnostics }
 
 Если версионирование не инициализировано, попытка внедрить `VersionInfo` завершится `RuntimeError` с перечислением возможных причин:
 
 - `VersioningMiddleware` не добавлен в приложение, монтирующее версии;
 - у субприложения не задан `FastAPI(api_version=<int>)`;
-- роут зарегистрирован после первого запроса, а `rebuild_versioning` не вызывался.
+- роут зарегистрирован после первого запроса, а [`rebuild_versioning`](middleware.md#runtime) не вызывался.
+
+!!! tip "Полный справочник"
+
+    Сигнатуры и подробное описание — в [справочнике API](../reference/dependency.md).
