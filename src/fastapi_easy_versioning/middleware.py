@@ -191,11 +191,14 @@ def _iter_api_routes(app: FastAPI) -> Iterator[_RouteView]:
                 is_websocket=False,
             )
         elif isinstance(route, APIWebSocketRoute):
-            # For an included websocket route the effective context is not
-            # populated; fastapi serves it through a reconstructed
-            # `starlette_route` (effective path, merged include-time
-            # dependencies) and puts that object into scope["route"].
-            source = getattr(context, "starlette_route", None) or route
+            # fastapi serves an included websocket route through a reconstructed
+            # `starlette_route` (effective path, merged include-time dependencies)
+            # and puts that object into scope["route"]. There is no public handle
+            # to it: RouteContext delegated attribute access to the effective
+            # context before 0.143.1 and to starlette_route itself since, so read
+            # the private dataclass field (present on fastapi >= 0.137.2).
+            effective = getattr(context, "_route_context", None)
+            source = getattr(effective, "starlette_route", None) or route
             yield _RouteView(
                 source,
                 source.path,
