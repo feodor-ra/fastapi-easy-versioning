@@ -260,6 +260,7 @@ def _inherit_route(view: _RouteView, target: FastAPI) -> APIRoute | APIWebSocket
         callbacks=context.callbacks,
         openapi_extra=context.openapi_extra,
         generate_unique_id_function=context.generate_unique_id_function,
+        strict_content_type=context.strict_content_type,
         dependency_overrides_provider=target,
     )
 

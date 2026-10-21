@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import inspect
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, Response
@@ -213,6 +214,36 @@ async def test_included_router_with_prefix_is_inherited(
     assert response.status_code == HTTPStatus.OK
     assert v2.openapi_schema is not None
     assert "/nested/sub/test" in v2.openapi_schema["paths"]
+
+
+@pytest.mark.skipif(
+    "strict_content_type" not in inspect.signature(APIRouter).parameters,
+    reason="APIRouter has no strict_content_type on this FastAPI",
+)
+@pytest.mark.usefixtures("v2", "middleware_setup")
+async def test_included_router_keeps_strict_content_type(
+    client: AsyncClient,
+    v1: FastAPI,
+) -> None:
+    """Include a non-strict router with a prefix and post JSON without Content-Type.
+
+    The inherited route must keep the router's strict_content_type=False, so
+    both versions accept the body; a strict route answers 422 instead.
+    """
+    router = APIRouter(strict_content_type=False, dependencies=[Depends(versioning())])
+
+    @router.post("/echo")
+    def echo(payload: dict[str, int]) -> dict[str, int]:
+        return payload
+
+    v1.include_router(router, prefix="/nested")
+
+    declared = await client.post("/v1/nested/echo", content=b'{"x": 1}')
+    inherited = await client.post("/v2/nested/echo", content=b'{"x": 1}')
+
+    assert declared.status_code == HTTPStatus.OK
+    assert inherited.status_code == HTTPStatus.OK
+    assert inherited.json() == {"x": 1}
 
 
 @pytest.mark.usefixtures("middleware_setup")
