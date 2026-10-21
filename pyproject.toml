@@ -9,7 +9,9 @@ requires-python = ">=3.10,<4"
 dependencies = [
     # 0.137.0/0.137.1 are excluded: the router-tree refactor landed in
     # 0.137.0 but the public iter_route_contexts API only in 0.137.2.
-    "fastapi>=0.95.0,!=0.137.0,!=0.137.1",
+    # <0.145: FastAPI 0.145 removed FastAPI(**extra), which carries the
+    # api_version declaration.
+    "fastapi>=0.95.0,!=0.137.0,!=0.137.1,<0.145",
 ]
 license = { file = "LICENSE" }
 keywords = ["fastapi", "versioning", "api-versioning", "openapi", "asgi"]
