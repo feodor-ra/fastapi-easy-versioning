@@ -5,13 +5,16 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, FastAPI, Response
 from httpx2 import AsyncClient
 import pytest
+from starlette.applications import Starlette
 
 from src.fastapi_easy_versioning import (
+    API_VERSION_KEY,
     VersionInfo,
     VersioningMiddleware,
     VersioningSupport,
     rebuild_versioning,
     versioning,
+    versionize,
 )
 
 pytestmark = [pytest.mark.anyio]
@@ -458,3 +461,74 @@ async def test_require_versioning_endpoint_without_openapi_rebuild(
 
     assert response.status_code == expected_status
     assert openapi_before == openapi_after
+
+
+def test_versionize_returns_the_same_app() -> None:
+    """Declare a version and check the call returns the app it was given.
+
+    The very same object comes back, so the declaration can wrap an app inline.
+    """
+    app_v1 = FastAPI()
+
+    assert versionize(app_v1, 1) is app_v1
+
+
+@pytest.mark.parametrize("version", [True, "1", 1.0, None])
+def test_versionize_rejects_non_int_version(version: object) -> None:
+    """Declare a version that is not an int, bool included.
+
+    The mistake fails right at the call instead of at the first ASGI event.
+    """
+    with pytest.raises(TypeError, match="int version"):
+        versionize(FastAPI(), version)
+
+
+def test_versionize_rejects_non_fastapi_app() -> None:
+    """Declare a version on a plain Starlette application.
+
+    Only FastAPI sub-applications can be versions, so this fails right away.
+    """
+    with pytest.raises(TypeError, match="FastAPI application"):
+        versionize(Starlette(), 1)
+
+
+def test_versionize_redeclaration() -> None:
+    """Declare the same app twice: with the same version, then with another one.
+
+    Repeating a declaration is a no-op, while a different version is a bug that
+    must not silently move the app to another version.
+    """
+    app_v1 = versionize(FastAPI(), 1)
+
+    assert versionize(app_v1, 1) is app_v1
+    with pytest.raises(ValueError, match="already declared as version 1"):
+        versionize(app_v1, 2)
+
+
+@pytest.mark.usefixtures("middleware_setup")
+async def test_versionize_wins_over_legacy_keyword(
+    client: AsyncClient,
+    app: FastAPI,
+    recwarn: pytest.WarningsRecorder,
+) -> None:
+    """Declare an app with versionize() while it also carries the old keyword.
+
+    versionize() wins, and the leftover keyword value is neither validated nor
+    reported as a deprecated declaration.
+    """
+    app_v1 = versionize(FastAPI(), 1)
+    app_v1.extra = {API_VERSION_KEY: "bogus"}  # as stored by the old keyword
+    app.mount("/v1", app_v1)
+    app.mount("/v2", versionize(FastAPI(), 2))
+
+    def endpoint(
+        version: Annotated[VersionInfo, Depends(versioning())],
+    ) -> dict[str, int]:
+        return {"origin": version.origin}
+
+    app_v1.router.add_api_route("/test", endpoint)
+
+    response = await client.get("/v2/test")
+
+    assert response.json() == {"origin": 1}
+    assert not [w for w in recwarn if API_VERSION_KEY in str(w.message)]

@@ -81,8 +81,8 @@ class VersioningSupport:
             msg = (
                 "Versioning is not initialized for this route. Make sure that "
                 "VersioningMiddleware is added to the application that mounts "
-                "the version sub-apps, the sub-app is created with "
-                "FastAPI(api_version=<int>), and the route is registered before "
+                "the version sub-apps, the sub-app is declared with "
+                "versionize(app, <int>), and the route is registered before "
                 "the first request (otherwise call rebuild_versioning)."
             )
             raise RuntimeError(msg)
@@ -95,7 +95,9 @@ def versioning(*, until: int | None = None) -> VersioningSupport:
     Marking is opt-in: an endpoint without this dependency is invisible to
     versioning and stays only in the version that declares it. Inheritance itself
     is performed by
-    [`VersioningMiddleware`][fastapi_easy_versioning.VersioningMiddleware].
+    [`VersioningMiddleware`][fastapi_easy_versioning.VersioningMiddleware], and
+    the versions are declared with
+    [`versionize`][fastapi_easy_versioning.versionize].
 
     Usage:
         ```python

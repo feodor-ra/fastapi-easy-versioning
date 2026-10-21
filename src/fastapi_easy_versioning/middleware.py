@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple, TypeVar
 import warnings
 
 from fastapi import FastAPI
@@ -23,23 +23,33 @@ if TYPE_CHECKING:
     from starlette.types import ASGIApp, Receive, Scope, Send  # pragma: no cover
 
 API_VERSION_KEY: Final = "api_version"
-"""Name of the `FastAPI()` keyword that declares a sub-app's API version.
+"""Name of the deprecated `FastAPI()` keyword that declares a sub-app's version.
 
-Unknown keywords land in `FastAPI.extra`, which is where the middleware reads
-this one from. The value must be an `int` (`0` is valid, `bool` is not); a
-sub-app without it — or with a value of another type, which also emits a
-`UserWarning` — takes no part in versioning.
+Declare versions with [`versionize`][fastapi_easy_versioning.versionize]
+instead. On FastAPI < 0.145 unknown keywords still land in `FastAPI.extra`,
+which is where the middleware reads this one from when the app has no
+`versionize` declaration. The value must then be an `int` (`0` is valid, `bool`
+is not); a value of another type emits a `UserWarning` and leaves the app out
+of versioning.
 
 Warning:
     Deprecated since 0.4.2. FastAPI 0.145 removed `**extra`, so the keyword
     only works on FastAPI < 0.145, and declaring a version with it emits a
-    `FutureWarning`. Version 0.5.0 replaces it with a new interface.
+    `FutureWarning`. The keyword and this constant will be removed together
+    with support for FastAPI < 0.145.
 
 Usage:
     ```python
-    app_v1 = FastAPI(api_version=1)  # or FastAPI(**{API_VERSION_KEY: 1})
+    app_v1 = FastAPI(api_version=1)  # deprecated: FastAPI < 0.145 only
+    app_v1 = versionize(FastAPI(), 1)  # instead
     ```
 """
+
+VERSION_ATTR: Final = "_fastapi_easy_versioning_version"
+"""Attribute on a version app's `state` holding the version declared with
+`versionize()`."""
+
+_AppT = TypeVar("_AppT", bound=FastAPI)
 
 # Public route-tree iteration API. Since the 0.137 router refactor
 # include_router no longer copies routes into a flat list: router.routes
@@ -78,7 +88,8 @@ class VersioningMiddleware:
     [`rebuild_versioning`][fastapi_easy_versioning.rebuild_versioning] to pick up
     routes added at runtime.
 
-    Add it to the application that **directly mounts** the version sub-apps, never
+    Add it to the application that **directly mounts** the version sub-apps —
+    each declared with [`versionize`][fastapi_easy_versioning.versionize] — never
     to the sub-apps themselves. Several instances may coexist in one application
     tree — each versions only the sub-apps mounted directly under its own app, so
     independent APIs version separately.
@@ -97,8 +108,8 @@ class VersioningMiddleware:
         # or alternatively
         app.add_middleware(VersioningMiddleware)
 
-        app.mount("/v1", FastAPI(api_version=1))
-        app.mount("/v2", FastAPI(api_version=2))
+        app.mount("/v1", versionize(FastAPI(), 1))
+        app.mount("/v2", versionize(FastAPI(), 2))
         ```
 
     Args:
@@ -165,6 +176,59 @@ def rebuild_versioning(app: Starlette, *, rebuild_openapi: bool = True) -> None:
     for version_app in version_mapping.values():
         version_app.openapi_schema = None
         version_app.openapi_schema = version_app.openapi()
+
+
+def versionize(app: _AppT, version: int) -> _AppT:
+    """Declare the API version of a sub-application.
+
+    Marks `app` as version `version` for the
+    [`VersioningMiddleware`][fastapi_easy_versioning.VersioningMiddleware] of the
+    application it gets mounted under, and returns the very same object, so the
+    call can wrap the app inline. Not to be confused with
+    [`versioning`][fastapi_easy_versioning.versioning]: `versionize` declares
+    which version an application is, `versioning()` marks which of its endpoints
+    are inherited by later versions.
+
+    The declaration is read when versioning is built — on the middleware's first
+    ASGI event. A version declared or mounted after that needs an explicit
+    [`rebuild_versioning`][fastapi_easy_versioning.rebuild_versioning] call.
+
+    Usage:
+        ```python
+        app_v1 = versionize(FastAPI(), 1)
+        app.mount("/v1", app_v1)
+        app.mount("/v2", versionize(FastAPI(title="v2"), 2))
+        ```
+
+    Args:
+        app (FastAPI): The version sub-application; it is modified in place.
+        version (int): The version number. Any `int` is valid, `0` and negative
+            numbers included; `bool` is rejected.
+
+    Returns:
+        FastAPI: The same `app` object, typed as passed in.
+
+    Raises:
+        TypeError: `app` is not a `FastAPI` application, or `version` is not an
+            `int`.
+        ValueError: `app` is already declared with a different version.
+
+    """
+    if not isinstance(app, FastAPI):
+        msg = f"versionize() expects a FastAPI application, got {type(app).__name__}"
+        raise TypeError(msg)
+    if not isinstance(version, int) or isinstance(version, bool):
+        msg = f"versionize() expects an int version, got {version!r}"
+        raise TypeError(msg)
+    declared = getattr(app.state, VERSION_ATTR, None)
+    if declared is not None and declared != version:
+        msg = (
+            f"The app is already declared as version {declared}; "
+            f"it cannot be declared as version {version} too."
+        )
+        raise ValueError(msg)
+    setattr(app.state, VERSION_ATTR, version)
+    return app
 
 
 def _iter_api_routes(app: FastAPI) -> Iterator[_RouteView]:
@@ -295,30 +359,35 @@ def _infos_of(app: FastAPI) -> dict[int, VersionInfo]:
 
 def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
     version_pairs = []
-    declared = False
+    legacy_paths = []
     for route in app.routes:
-        if not (
-            isinstance(route, Mount)
-            and isinstance(route.app, FastAPI)
-            and API_VERSION_KEY in route.app.extra
-        ):
+        if not (isinstance(route, Mount) and isinstance(route.app, FastAPI)):
             continue
-        declared = True
-        version = route.app.extra[API_VERSION_KEY]
-        if isinstance(version, int) and not isinstance(version, bool):
-            version_pairs.append((version, route.app))
-        else:
-            warnings.warn(
-                f"Mounted app at {route.path!r} declares "
-                f"{API_VERSION_KEY}={version!r}, which is not an int; "
-                "the app is ignored by versioning.",
-                stacklevel=2,
-            )
-    if declared:
+        version = getattr(route.app.state, VERSION_ATTR, None)
+        if version is None:
+            # The deprecated FastAPI(api_version=N) keyword lands in app.extra,
+            # which fastapi 0.145 removed together with **extra.
+            extra = getattr(route.app, "extra", None) or {}
+            if API_VERSION_KEY not in extra:
+                continue
+            legacy_paths.append(route.path)
+            version = extra[API_VERSION_KEY]
+            if not isinstance(version, int) or isinstance(version, bool):
+                warnings.warn(
+                    f"Mounted app at {route.path!r} declares "
+                    f"{API_VERSION_KEY}={version!r}, which is not an int; "
+                    "the app is ignored by versioning.",
+                    stacklevel=2,
+                )
+                continue
+        version_pairs.append((version, route.app))
+    if legacy_paths:
+        mounts = ", ".join(map(repr, legacy_paths))
         warnings.warn(
             f"Declaring a version with FastAPI({API_VERSION_KEY}=...) is deprecated: "
             "FastAPI 0.145 removed the **extra keyword arguments it relies on. "
-            "fastapi-easy-versioning 0.5.0 will replace it with a new interface.",
+            f"Use versionize(app, version) instead (mounted at {mounts}); "
+            "the keyword will be removed in a future release.",
             FutureWarning,
             stacklevel=2,
         )
