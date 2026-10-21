@@ -70,10 +70,8 @@ jobs:
             spec: "fastapi==0.136.*"
           - label: "0.137.2 (router tree, old RouteContext)"
             spec: "fastapi==0.137.2"
-          # --with ignores the project's <0.145 cap; back to plain "fastapi"
-          # once 0.5.0 lifts it.
-          - label: "latest supported"
-            spec: "fastapi<0.145"
+          - label: "latest"
+            spec: "fastapi"
     steps:
     - name: Checkout Code Repository
       uses: actions/checkout@v4
