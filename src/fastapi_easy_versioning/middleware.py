@@ -30,6 +30,11 @@ this one from. The value must be an `int` (`0` is valid, `bool` is not); a
 sub-app without it — or with a value of another type, which also emits a
 `UserWarning` — takes no part in versioning.
 
+Warning:
+    Deprecated since 0.4.2. FastAPI 0.145 removed `**extra`, so the keyword
+    only works on FastAPI < 0.145, and declaring a version with it emits a
+    `FutureWarning`. Version 0.5.0 replaces it with a new interface.
+
 Usage:
     ```python
     app_v1 = FastAPI(api_version=1)  # or FastAPI(**{API_VERSION_KEY: 1})
@@ -290,6 +295,7 @@ def _infos_of(app: FastAPI) -> dict[int, VersionInfo]:
 
 def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
     version_pairs = []
+    declared = False
     for route in app.routes:
         if not (
             isinstance(route, Mount)
@@ -297,6 +303,7 @@ def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
             and API_VERSION_KEY in route.app.extra
         ):
             continue
+        declared = True
         version = route.app.extra[API_VERSION_KEY]
         if isinstance(version, int) and not isinstance(version, bool):
             version_pairs.append((version, route.app))
@@ -307,6 +314,14 @@ def _build_version_mapping(app: Starlette) -> Mapping[int, FastAPI]:
                 "the app is ignored by versioning.",
                 stacklevel=2,
             )
+    if declared:
+        warnings.warn(
+            f"Declaring a version with FastAPI({API_VERSION_KEY}=...) is deprecated: "
+            "FastAPI 0.145 removed the **extra keyword arguments it relies on. "
+            "fastapi-easy-versioning 0.5.0 will replace it with a new interface.",
+            FutureWarning,
+            stacklevel=2,
+        )
     return dict(sorted(version_pairs, key=itemgetter(0)))
 
 

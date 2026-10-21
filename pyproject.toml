@@ -123,3 +123,8 @@ addopts = [
     "--cov-report=xml",
     "--cov-report=term",
 ]
+filterwarnings = [
+    # Every fixture declares versions with FastAPI(api_version=N); the warning
+    # itself is asserted in test_api_version_keyword_is_deprecated.
+    "ignore:Declaring a version with FastAPI:FutureWarning",
+]

@@ -408,6 +408,21 @@ def test_invalid_api_version_warns(app: FastAPI) -> None:
         rebuild_versioning(app)
 
 
+@pytest.mark.usefixtures("v1", "v2")
+def test_api_version_keyword_is_deprecated(app: FastAPI) -> None:
+    """Declare versions with FastAPI(api_version=N) and rebuild.
+
+    FastAPI 0.145 removed **extra, so the declaration must announce its
+    replacement with a single FutureWarning per build.
+    """
+    with pytest.warns(
+        FutureWarning, match=r"FastAPI\(api_version=\.\.\.\) is deprecated"
+    ) as record:
+        rebuild_versioning(app)
+
+    assert len(record) == 1
+
+
 @pytest.mark.usefixtures("v1")
 def test_until_below_declaring_version_warns(app: FastAPI, v2: FastAPI) -> None:
     """Declare an endpoint in version 2 versioned until version 1 and rebuild.
