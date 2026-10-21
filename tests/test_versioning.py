@@ -397,7 +397,7 @@ async def test_require_versioning_endpoint_without_openapi_rebuild(
     """Try require versioning endpoint from previous version with disabled OpenAPI rebuild.
 
     This response 204 code.
-    """  # noqa: E501
+    """  # ruff: ignore[line-too-long]
     expected_status = HTTPStatus.NO_CONTENT
     app.add_middleware(VersioningMiddleware, rebuild_openapi=False)
     v1.add_api_route(

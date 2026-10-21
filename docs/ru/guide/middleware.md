@@ -59,8 +59,8 @@ Middleware определяет, какие FastAPI-приложения уча�
 - `api_version` неверного типа (`"1"`, `True`, `1.0`) — субприложение игнорируется, при этом выдаётся `UserWarning`, чтобы опечатка не осталась незамеченной.
 
 ```python
-app_v1 = FastAPI(api_version=1)   # участвует в версионировании
-internal = FastAPI()              # игнорируется
+app_v1 = FastAPI(api_version=1)  # участвует в версионировании
+internal = FastAPI()  # игнорируется
 ```
 
 !!! note "`bool` — не `int`"

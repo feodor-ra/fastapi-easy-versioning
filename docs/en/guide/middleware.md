@@ -59,8 +59,8 @@ The middleware decides which FastAPI applications take part in versioning by the
 - An `api_version` of the wrong type (`"1"`, `True`, `1.0`) makes the sub-application ignored, and a `UserWarning` is emitted so the typo does not go unnoticed.
 
 ```python
-app_v1 = FastAPI(api_version=1)   # takes part in versioning
-internal = FastAPI()              # ignored
+app_v1 = FastAPI(api_version=1)  # takes part in versioning
+internal = FastAPI()  # ignored
 ```
 
 !!! note "`bool` is not `int`"

@@ -35,7 +35,7 @@ Issues = "https://github.com/feodor-ra/fastapi-easy-versioning/issues"
 Changelog = "https://feodor-ra.github.io/fastapi-easy-versioning/changelog/"
 
 [build-system]
-requires = ["uv_build>=0.8.3,<0.12.0"]
+requires = ["uv_build>=0.8.3,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -47,20 +47,20 @@ dev = [
 ]
 lint = [
     "pre-commit~=4.6.0",
-    "ruff~=0.15.20",
-    "ty~=0.0.56",
+    "ruff~=0.17.1",
+    "ty~=0.0.90",
 ]
 examples = [
     "fastapi[standard]",
 ]
 test = [
-    "anyio~=4.14.1",
-    "httpx2~=2.5.0",
+    "anyio~=4.15.1",
+    "httpx2~=2.14.0",
     "pytest~=9.1.1",
     "pytest-cov~=7.1.0",
 ]
 docs = [
-    "mkdocs-material~=9.7.6",
+    "mkdocs-material~=9.7.7",
     "mkdocs-static-i18n~=1.3.1",
     "mkdocstrings[python]~=1.0.6",
 ]
@@ -74,17 +74,17 @@ fix = true
 [tool.ruff.lint]
 select = ['ALL']
 ignore = [
-    'D100',
-    'D101',
-    'D102',
-    'D103',
-    'D104',
-    'D105',
-    'D106',
-    'D107',
-    'D203',
-    'D213',
-    'COM812',
+    'undocumented-public-module',
+    'undocumented-public-class',
+    'undocumented-public-method',
+    'undocumented-public-function',
+    'undocumented-public-package',
+    'undocumented-magic-method',
+    'undocumented-public-nested-class',
+    'undocumented-public-init',
+    'incorrect-blank-line-before-class',
+    'multi-line-summary-second-line',
+    'missing-trailing-comma',
     'CPY',
 ]
 preview = true
@@ -103,11 +103,11 @@ force-sort-within-sections = true
 known-third-party = ["fastapi_easy_versioning", "pytest"]
 
 [tool.ruff.lint.per-file-ignores]
-"examples/*" = ["INP001", "E501"]
-"tests/*" = ["S101", "PLR0913", "PLR0917"]
+"examples/*" = ["implicit-namespace-package", "line-too-long"]
+"tests/*" = ["assert", "too-many-arguments", "too-many-positional-arguments"]
 # FastAPI cannot resolve postponed annotations of a callable-instance
 # dependency (no __globals__ on the instance), so no future import here.
-"src/fastapi_easy_versioning/dependency.py" = ["FA100"]
+"src/fastapi_easy_versioning/dependency.py" = ["future-rewritable-type-annotation"]
 
 [tool.ty.environment]
 python-version = "3.10"

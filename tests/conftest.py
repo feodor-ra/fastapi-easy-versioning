@@ -58,10 +58,10 @@ def websocket_request(app: FastAPI) -> WebSocketRequest:
         messages = iter(outgoing)
 
         # ASGI receive/send callables must be async regardless of their bodies.
-        async def receive() -> dict[str, Any]:  # noqa: RUF029
+        async def receive() -> dict[str, Any]:  # ruff: ignore[unused-async]
             return next(messages)
 
-        async def send(message: dict[str, Any]) -> None:  # noqa: RUF029
+        async def send(message: dict[str, Any]) -> None:  # ruff: ignore[unused-async]
             incoming.append(message)
 
         scope: dict[str, Any] = {
