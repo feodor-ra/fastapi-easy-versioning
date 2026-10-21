@@ -2,17 +2,18 @@ from fastapi import Depends, FastAPI, middleware
 from fastapi_easy_versioning import (
     VersioningMiddleware,
     versioning,
+    versionize,
 )
 
 app = FastAPI()
 
 public_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-public_v1 = FastAPI(api_version=1)
-public_v2 = FastAPI(api_version=2)
+public_v1 = versionize(FastAPI(), 1)
+public_v2 = versionize(FastAPI(), 2)
 
 private_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-private_v1 = FastAPI(api_version=1)
-private_v2 = FastAPI(api_version=2)
+private_v1 = versionize(FastAPI(), 1)
+private_v2 = versionize(FastAPI(), 2)
 
 app.mount("/api/public", public_app)
 public_app.mount("/v1", public_v1)

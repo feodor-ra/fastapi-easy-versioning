@@ -97,12 +97,12 @@ async def test_require_endpoint_without_any_versioned_mounts(
 
 
 @pytest.mark.usefixtures("middleware_setup")
-async def test_require_versioning_endpoint_from_app_without_extra(
+async def test_require_versioning_endpoint_from_app_without_version(
     client: AsyncClient,
     app: FastAPI,
     v1: FastAPI,
 ) -> None:
-    """Try require versioning endpoint from app version without extra api_version.
+    """Try require versioning endpoint from an app with no declared version.
 
     This response 404 code.
     """
@@ -112,7 +112,7 @@ async def test_require_versioning_endpoint_from_app_without_extra(
     ) -> None: ...
 
     app.mount("/v3", FastAPI())
-    app.mount("/v4", FastAPI(api_version=4))
+    app.mount("/v4", versionize(FastAPI(), 4))
     v1.router.add_api_route("/test", endpoint)
 
     response = await client.get("/v3/test")
@@ -128,9 +128,9 @@ async def test_version_zero_survives_rebuild(
 ) -> None:
     """Require versioning endpoint declared in version 0 twice with rebuild between.
 
-    Version 0 is a valid api_version and origin must stay 0 after a rebuild.
+    Version 0 is a valid version and origin must stay 0 after a rebuild.
     """
-    v0 = FastAPI(api_version=0)
+    v0 = versionize(FastAPI(), 0)
     app.mount("/v0", v0)
 
     def endpoint(
@@ -151,23 +151,27 @@ async def test_version_zero_survives_rebuild(
 
 
 @pytest.mark.usefixtures("v2", "middleware_setup")
-async def test_bool_api_version_is_not_a_version(
+async def test_legacy_bool_api_version_is_not_a_version(
     client: AsyncClient,
     app: FastAPI,
 ) -> None:
-    """Try require versioning endpoint from an app with bool api_version.
+    """Try require versioning endpoint from an app with a bool legacy api_version.
 
     bool is not a version number (True must not be treated as version 1),
     so the endpoint is not inherited anywhere and a warning is emitted.
     """
-    fake = FastAPI(api_version=True)
+    fake = FastAPI()
+    fake.extra = {API_VERSION_KEY: True}  # as stored by the deprecated keyword
     app.mount("/fake", fake)
 
     def endpoint(_: Annotated[VersioningSupport, Depends(versioning())]) -> None: ...
 
     fake.router.add_api_route("/test", endpoint)
 
-    with pytest.warns(UserWarning, match="api_version=True"):
+    with (
+        pytest.warns(FutureWarning, match="mounted at '/fake'"),
+        pytest.warns(UserWarning, match="api_version=True"),
+    ):
         response = await client.get("/v2/test")
 
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -377,12 +381,12 @@ async def test_multiple_independent_versioned_apps(
     private.add_middleware(VersioningMiddleware)
     app.mount("/public", public)
     app.mount("/private", private)
-    public_v1 = FastAPI(api_version=1)
-    private_v1 = FastAPI(api_version=1)
+    public_v1 = versionize(FastAPI(), 1)
+    private_v1 = versionize(FastAPI(), 1)
     public.mount("/v1", public_v1)
-    public.mount("/v2", FastAPI(api_version=2))
+    public.mount("/v2", versionize(FastAPI(), 2))
     private.mount("/v1", private_v1)
-    private.mount("/v2", FastAPI(api_version=2))
+    private.mount("/v2", versionize(FastAPI(), 2))
 
     public_v1.router.add_api_route(
         "/endpoint", lambda: None, dependencies=[Depends(versioning())]
@@ -400,30 +404,73 @@ async def test_multiple_independent_versioned_apps(
     assert declared.status_code == HTTPStatus.OK
 
 
-def test_invalid_api_version_warns(app: FastAPI) -> None:
-    """Mount an app whose api_version is not an int and rebuild.
+def test_legacy_invalid_api_version_warns(app: FastAPI) -> None:
+    """Mount an app whose legacy api_version is not an int and rebuild.
 
     The mount is ignored, but a warning must point at it instead of silence.
     """
-    app.mount("/broken", FastAPI(api_version="1"))
+    broken = FastAPI()
+    broken.extra = {API_VERSION_KEY: "1"}  # as stored by the deprecated keyword
+    app.mount("/broken", broken)
 
-    with pytest.warns(UserWarning, match="api_version='1'"):
+    with (
+        pytest.warns(FutureWarning, match="mounted at '/broken'"),
+        pytest.warns(UserWarning, match="api_version='1'"),
+    ):
         rebuild_versioning(app)
 
 
-@pytest.mark.usefixtures("v1", "v2")
 def test_api_version_keyword_is_deprecated(app: FastAPI) -> None:
-    """Declare versions with FastAPI(api_version=N) and rebuild.
+    """Declare two versions with the deprecated keyword and rebuild.
 
-    FastAPI 0.145 removed **extra, so the declaration must announce its
-    replacement with a single FutureWarning per build.
+    FastAPI 0.145 removed **extra, so a single FutureWarning per build must
+    point at versionize() and name every mount still using the keyword. The
+    message keeps the 0.4.2 prefix, so filters set up back then still match.
     """
+    for path, version in (("/v1", 1), ("/v2", 2)):
+        legacy = FastAPI()
+        legacy.extra = {API_VERSION_KEY: version}  # as stored by the keyword
+        app.mount(path, legacy)
+
     with pytest.warns(
-        FutureWarning, match=r"FastAPI\(api_version=\.\.\.\) is deprecated"
+        FutureWarning, match=r"Use versionize\(app, version\) instead"
     ) as record:
         rebuild_versioning(app)
 
     assert len(record) == 1
+    message = str(record[0].message)
+    assert message.startswith("Declaring a version with FastAPI")
+    assert "mounted at '/v1', '/v2'" in message
+
+
+@pytest.mark.skipif(
+    not hasattr(FastAPI(), "extra"),
+    reason="FastAPI 0.145+ rejects unknown keyword arguments",
+)
+@pytest.mark.usefixtures("v2", "middleware_setup")
+async def test_legacy_api_version_keyword_still_works(
+    client: AsyncClient,
+    app: FastAPI,
+) -> None:
+    """Declare a version with the real deprecated keyword on FastAPI < 0.145.
+
+    The app still takes part in versioning, with a FutureWarning pointing to
+    versionize().
+    """
+    legacy = FastAPI(**{API_VERSION_KEY: 1})
+    app.mount("/v1", legacy)
+
+    def endpoint(
+        version: Annotated[VersionInfo, Depends(versioning())],
+    ) -> dict[str, int]:
+        return {"origin": version.origin}
+
+    legacy.router.add_api_route("/test", endpoint)
+
+    with pytest.warns(FutureWarning, match="mounted at '/v1'"):
+        response = await client.get("/v2/test")
+
+    assert response.json() == {"origin": 1}
 
 
 @pytest.mark.usefixtures("v1")

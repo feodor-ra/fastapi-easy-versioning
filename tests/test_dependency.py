@@ -28,12 +28,11 @@ async def test_export_versioning_without_use_middleware(
 
 
 @pytest.mark.parametrize("from_version", [1, 2])
-@pytest.mark.usefixtures("middleware_setup")
+@pytest.mark.usefixtures("v2", "middleware_setup")
 async def test_export_versioning_metadata(
     from_version: int,
     client: AsyncClient,
     v1: FastAPI,
-    v2: FastAPI,
 ) -> None:
     """Export versioning metadata with setup middleware.
 
@@ -51,10 +50,7 @@ async def test_export_versioning_metadata(
     response = await client.get(f"/v{from_version}/test")
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {
-        "origin": v1.extra["api_version"],
-        "until": v2.extra["api_version"],
-    }
+    assert response.json() == {"origin": 1, "until": 2}
 
 
 @pytest.mark.usefixtures("v2", "middleware_setup")

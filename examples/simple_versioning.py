@@ -5,12 +5,13 @@ from fastapi_easy_versioning import (
     VersionInfo,
     VersioningMiddleware,
     versioning,
+    versionize,
 )
 
 app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-app_v1 = FastAPI(api_version=1)
-app_v2 = FastAPI(api_version=2)
-app_v3 = FastAPI(api_version=3)
+app_v1 = versionize(FastAPI(), 1)
+app_v2 = versionize(FastAPI(), 2)
+app_v3 = versionize(FastAPI(), 3)
 
 app.mount("/v1", app_v1)
 app.mount("/v2", app_v2)
