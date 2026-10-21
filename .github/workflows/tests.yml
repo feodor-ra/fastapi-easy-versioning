@@ -13,6 +13,9 @@ jobs:
   run:
     name: Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    # Override .python-version, which would otherwise make every leg run 3.14.
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +55,8 @@ jobs:
   fastapi-compat:
     name: FastAPI ${{ matrix.label }}
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.13"
     strategy:
       fail-fast: false
       matrix:
@@ -71,7 +76,7 @@ jobs:
         enable-cache: true
         cache-dependency-glob: uv.lock
     - name: Set up Python
-      run: uv python install 3.13
+      run: uv python install
     - name: Create venv, install dependencies
       run: uv sync --group=test --frozen
     - name: Test with pytest against ${{ matrix.spec }}
