@@ -9,6 +9,9 @@ on:
   push:
     branches: ["master"]
     paths-ignore: ["docs/**", "README.md", "README.ru.md", "LICENSE"]
+  # Weekly, so an upstream FastAPI release that breaks us surfaces without a push.
+  schedule:
+    - cron: "0 6 * * 1"
 jobs:
   run:
     name: Python ${{ matrix.python-version }}
@@ -65,8 +68,12 @@ jobs:
             spec: "fastapi==0.95.*"
           - label: "0.136 (last before router tree)"
             spec: "fastapi==0.136.*"
-          - label: "latest"
-            spec: "fastapi"
+          - label: "0.137.2 (router tree, old RouteContext)"
+            spec: "fastapi==0.137.2"
+          # --with ignores the project's <0.145 cap; back to plain "fastapi"
+          # once 0.5.0 lifts it.
+          - label: "latest supported"
+            spec: "fastapi<0.145"
     steps:
     - name: Checkout Code Repository
       uses: actions/checkout@v4
