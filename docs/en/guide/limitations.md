@@ -8,24 +8,23 @@ An honest list of what is out of scope — plus a little about how it works insi
 
 ## FastAPI versions { #fastapi }
 
-The dependency constraint is `fastapi >=0.95.0,!=0.137.0,!=0.137.1,<0.145`.
+The dependency constraint is `fastapi >=0.95.0,!=0.137.0,!=0.137.1`.
 
 | FastAPI version | Status | How routes are walked |
 | --- | --- | --- |
 | `0.95` – `0.136` | Supported | The flat `router.routes` list |
 | `0.137.0`, `0.137.1` | **Excluded** | The route tree already exists, the public iterator does not |
-| `0.137.2` – `0.144` | Supported | The public `iter_route_contexts` |
-| `0.145` and newer | **Not supported yet** | `FastAPI(**extra)`, which the `api_version` declaration relies on, was removed |
+| `0.137.2` and newer | Supported | The public `iter_route_contexts` |
 
 FastAPI `0.137.0` refactored routing: `include_router` stopped copying routes and `router.routes` became a tree. The supported way to walk that tree — `iter_route_contexts` — only landed in `0.137.2`, so the two-release gap is excluded at the dependency level.
 
-FastAPI `0.145` removed `**extra` together with the `app.extra` attribute: `FastAPI(api_version=N)` raises `TypeError` there. Until 0.5.0 brings a new way to declare versions, the library caps FastAPI below `0.145`, and the declaration itself is deprecated — see [Middleware](middleware.md#api-version).
+FastAPI `0.145` removed `**extra` together with the `app.extra` attribute: the deprecated `FastAPI(api_version=N)` declaration raises `TypeError` there. That is why versions are declared with [`versionize`](middleware.md#api-version), which works on every supported FastAPI, while the old way works only on FastAPI < 0.145 — see the [migration notes](middleware.md#migration).
 
 The right regime is picked automatically: the iterator is looked up with `getattr` at import time, and the flat walk is used when it is absent.
 
 !!! info "What CI checks"
 
-    The main matrix runs Python 3.10–3.14 against the FastAPI version from the lock file (`0.144`). Separate jobs on Python 3.13 check the minimum supported version (`0.95`), the last pre-refactor one (`0.136`), the first supported router-tree release (`0.137.2`) and the latest supported one (`<0.145`). Besides pushes and PRs, CI also runs weekly.
+    The main matrix runs Python 3.10–3.14 against the FastAPI version from the lock file (`0.156`). Separate jobs on Python 3.13 check the minimum supported version (`0.95`), the last pre-refactor one (`0.136`), the first supported router-tree release (`0.137.2`) and the latest one. Besides pushes and PRs, CI also runs weekly.
 
 ## Path-based versioning only
 
@@ -44,9 +43,9 @@ Inheritance is built once, on the first ASGI event:
 
 Until then nothing is versioned: route copying happens at runtime, not at import or decoration time. Anything added afterwards needs an explicit [`rebuild_versioning`](middleware.md#runtime).
 
-## `api_version` types
+## The version number
 
-Only `int`, and `bool` is rejected separately despite being a subclass of it. Values like `"1"`, `1.0` or `True` make the sub-application ignored — with a `UserWarning`, so it does not look like a silently vanished version. A sub-application with no `api_version` at all is ignored silently: that is the normal way to mount something unversioned alongside.
+Only `int`, and `bool` is rejected separately despite being a subclass of it. `versionize` with `"1"`, `1.0` or `True` raises `TypeError` right away. The deprecated `FastAPI(api_version=...)` declaration with such a value does not fail, but the sub-application is ignored — with a `UserWarning`, so it does not look like a silently vanished version. A sub-application with no declared version at all is ignored silently: that is the normal way to mount something unversioned alongside.
 
 ## Shadowing and matching paths { #shadowing }
 

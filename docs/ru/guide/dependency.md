@@ -34,9 +34,9 @@ title: Зависимость
 
 ```python
 from fastapi import APIRouter, Depends, FastAPI
-from fastapi_easy_versioning import versioning
+from fastapi_easy_versioning import versioning, versionize
 
-v1_app = FastAPI(api_version=1)
+v1_app = versionize(FastAPI(), 1)
 
 
 # На эндпоинте — через декоратор
@@ -69,9 +69,9 @@ v1_app.include_router(router)
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
-from fastapi_easy_versioning import VersionInfo, versioning
+from fastapi_easy_versioning import VersionInfo, versioning, versionize
 
-v1_app = FastAPI(api_version=1)
+v1_app = versionize(FastAPI(), 1)
 
 
 @v1_app.get("/endpoint")
@@ -85,9 +85,9 @@ def endpoint(version: Annotated[VersionInfo, Depends(versioning())]) -> str:
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, WebSocket
-from fastapi_easy_versioning import VersionInfo, versioning
+from fastapi_easy_versioning import VersionInfo, versioning, versionize
 
-v1_app = FastAPI(api_version=1)
+v1_app = versionize(FastAPI(), 1)
 
 
 @v1_app.websocket("/ws")
@@ -105,7 +105,7 @@ async def ws_endpoint(
 Если версионирование не инициализировано, попытка внедрить `VersionInfo` завершится `RuntimeError` с перечислением возможных причин:
 
 - `VersioningMiddleware` не добавлен в приложение, монтирующее версии;
-- у субприложения не задан `FastAPI(api_version=<int>)`;
+- субприложение не объявлено через `versionize(app, <int>)`;
 - роут зарегистрирован после первого запроса, а [`rebuild_versioning`](middleware.md#runtime) не вызывался.
 
 !!! tip "Полный справочник"

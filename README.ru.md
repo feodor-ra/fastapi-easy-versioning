@@ -6,7 +6,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
 ![PyPI - Status](https://img.shields.io/pypi/status/fastapi-easy-versioning)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%E2%80%930.144-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
 ![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
 ![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
@@ -39,21 +39,21 @@ def items() -> list[Item]:
 pip install fastapi-easy-versioning
 ```
 
-Требуется Python **3.10+** и FastAPI **≥ 0.95, < 0.145** (версии `0.137.0` и `0.137.1` исключены). `fastapi` — единственная рантайм-зависимость. Объявление версии через `FastAPI(api_version=N)` устарело в 0.4.2: в 0.5.0 его заменит новый интерфейс, который поддерживает и FastAPI 0.145+.
+Требуется Python **3.10+** и FastAPI **≥ 0.95** (версии `0.137.0` и `0.137.1` исключены). `fastapi` — единственная рантайм-зависимость. Обновляетесь с 0.4.x — сначала переведите объявления версий на `versionize`, см. [миграцию](https://feodor-ra.github.io/fastapi-easy-versioning/ru/guide/middleware/#migration).
 
 ## Как это использовать
 
 Версионирование строится из двух частей, которые работают **только вместе**.
 
-**1. Смонтируйте по субприложению на версию и добавьте middleware.** Middleware добавляется в агрегирующее приложение — то, которое непосредственно монтирует версии, — но не в сами версии.
+**1. Смонтируйте по субприложению на версию и добавьте middleware.** Версию субприложения объявляет `versionize(app, N)`. Middleware добавляется в агрегирующее приложение — то, которое непосредственно монтирует версии, — но не в сами версии.
 
 ```python
 from fastapi import Depends, FastAPI
-from fastapi_easy_versioning import VersioningMiddleware, versioning
+from fastapi_easy_versioning import VersioningMiddleware, versioning, versionize
 
 app = FastAPI()
-app_v1 = FastAPI(api_version=1)  # номер версии — целое число; 0 допустим
-app_v2 = FastAPI(api_version=2)
+app_v1 = versionize(FastAPI(), 1)  # номер версии — целое число; 0 допустим
+app_v2 = versionize(FastAPI(), 2)
 
 app.mount("/v1", app_v1)
 app.mount("/v2", app_v2)

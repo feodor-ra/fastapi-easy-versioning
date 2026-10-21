@@ -34,9 +34,9 @@ The dependency is accepted everywhere FastAPI accepts dependencies:
 
 ```python
 from fastapi import APIRouter, Depends, FastAPI
-from fastapi_easy_versioning import versioning
+from fastapi_easy_versioning import versioning, versionize
 
-v1_app = FastAPI(api_version=1)
+v1_app = versionize(FastAPI(), 1)
 
 
 # On an endpoint — through the decorator
@@ -69,9 +69,9 @@ The dependency can be injected into an endpoint — then it returns a `VersionIn
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
-from fastapi_easy_versioning import VersionInfo, versioning
+from fastapi_easy_versioning import VersionInfo, versioning, versionize
 
-v1_app = FastAPI(api_version=1)
+v1_app = versionize(FastAPI(), 1)
 
 
 @v1_app.get("/endpoint")
@@ -85,9 +85,9 @@ Injection works in WebSocket endpoints too:
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, WebSocket
-from fastapi_easy_versioning import VersionInfo, versioning
+from fastapi_easy_versioning import VersionInfo, versioning, versionize
 
-v1_app = FastAPI(api_version=1)
+v1_app = versionize(FastAPI(), 1)
 
 
 @v1_app.websocket("/ws")
@@ -105,7 +105,7 @@ async def ws_endpoint(
 If versioning has not been initialized, injecting `VersionInfo` fails with a `RuntimeError` listing the possible causes:
 
 - `VersioningMiddleware` is not added to the application that mounts the versions;
-- the sub-application was not created with `FastAPI(api_version=<int>)`;
+- the sub-application was not declared with `versionize(app, <int>)`;
 - the route was registered after the first request and [`rebuild_versioning`](middleware.md#runtime) was never called.
 
 !!! tip "Full reference"

@@ -150,7 +150,7 @@ graph TD
 !!! info "Requirements"
 
     - Python **3.10+**
-    - FastAPI **≥ 0.95, < 0.145** (`0.137.0` and `0.137.1` are excluded — see [Limitations](guide/limitations.md#fastapi))
+    - FastAPI **≥ 0.95** (`0.137.0` and `0.137.1` are excluded — see [Limitations](guide/limitations.md#fastapi))
     - Nothing else: `fastapi` is the only runtime dependency
 
 ## Next

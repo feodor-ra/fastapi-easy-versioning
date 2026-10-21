@@ -13,25 +13,26 @@ title: Быстрый старт
 
 ## 1. Создайте приложения-версии
 
-Версия — обычное FastAPI-приложение с extra-параметром `api_version`. Значение должно быть целым числом; `0` допустим.
+Версия — обычное FastAPI-приложение, объявленное функцией `versionize`. Номер версии должен быть целым числом; `0` допустим.
 
 ```python
 from fastapi import FastAPI
+from fastapi_easy_versioning import versionize
 
 app = FastAPI()
-app_v1 = FastAPI(api_version=1)  # (1)!
-app_v2 = FastAPI(api_version=2)
+app_v1 = versionize(FastAPI(), 1)  # (1)!
+app_v2 = versionize(FastAPI(), 2)
 
 app.mount("/v1", app_v1)  # (2)!
 app.mount("/v2", app_v2)
 ```
 
-1. `api_version` — не стандартный параметр FastAPI: неизвестные ключевые аргументы попадают в `app.extra`, откуда middleware его и читает.
-2. Префикс монтирования произвольный — версии различаются по `api_version`, а не по пути.
+1. `versionize` записывает номер версии в `app.state` приложения и возвращает то же приложение, поэтому его можно вызвать прямо при создании. Неверные аргументы — `TypeError` сразу при вызове.
+2. Префикс монтирования произвольный — версии различаются по объявленному номеру, а не по пути.
 
-!!! warning "Устарело в 0.4.2"
+!!! tip "Обновляетесь с 0.4.x?"
 
-    На FastAPI 0.145+ такое объявление не работает, поэтому библиотека ограничивает FastAPI версиями `<0.145` и выдаёт `FutureWarning`. Замена появится в 0.5.0 — подробнее в [Middleware](guide/middleware.md#api-version).
+    Раньше версия объявлялась как `FastAPI(api_version=N)`. На FastAPI 0.145+ так нельзя — см. [миграцию](guide/middleware.md#migration).
 
 ## 2. Добавьте middleware
 

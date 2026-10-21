@@ -13,25 +13,26 @@ Versioning is built from two pieces that work **only together**:
 
 ## 1. Create the version applications
 
-A version is an ordinary FastAPI application with an `api_version` extra. The value must be an integer; `0` is valid.
+A version is an ordinary FastAPI application declared with `versionize`. The version number must be an integer; `0` is valid.
 
 ```python
 from fastapi import FastAPI
+from fastapi_easy_versioning import versionize
 
 app = FastAPI()
-app_v1 = FastAPI(api_version=1)  # (1)!
-app_v2 = FastAPI(api_version=2)
+app_v1 = versionize(FastAPI(), 1)  # (1)!
+app_v2 = versionize(FastAPI(), 2)
 
 app.mount("/v1", app_v1)  # (2)!
 app.mount("/v2", app_v2)
 ```
 
-1. `api_version` is not a standard FastAPI parameter: unknown keyword arguments land in `app.extra`, which is where the middleware reads it from.
-2. The mount prefix is arbitrary — versions are told apart by `api_version`, not by path.
+1. `versionize` stores the version number in the application's `app.state` and returns the same application, so it can wrap the app right where it is created. Wrong arguments raise `TypeError` right at the call.
+2. The mount prefix is arbitrary — versions are told apart by the declared number, not by path.
 
-!!! warning "Deprecated in 0.4.2"
+!!! tip "Upgrading from 0.4.x?"
 
-    This declaration does not work on FastAPI 0.145+, so the library caps FastAPI below `0.145` and emits a `FutureWarning`. A replacement lands in 0.5.0 — see [Middleware](guide/middleware.md#api-version).
+    Versions used to be declared as `FastAPI(api_version=N)`, which does not work on FastAPI 0.145+ — see the [migration notes](guide/middleware.md#migration).
 
 ## 2. Add the middleware
 

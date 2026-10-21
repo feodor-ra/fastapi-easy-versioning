@@ -12,11 +12,11 @@ Middleware добавляется только в приложение, кото
 
 ```python
 from fastapi import FastAPI
-from fastapi_easy_versioning import VersioningMiddleware
+from fastapi_easy_versioning import VersioningMiddleware, versionize
 
 app = FastAPI()
-app_v1 = FastAPI(api_version=1)
-app_v2 = FastAPI(api_version=2)
+app_v1 = versionize(FastAPI(), 1)
+app_v2 = versionize(FastAPI(), 2)
 
 app.mount("/v1", app_v1)
 app.mount("/v2", app_v2)
@@ -27,17 +27,17 @@ app.add_middleware(VersioningMiddleware)
 
 ```python
 from fastapi import FastAPI, middleware
-from fastapi_easy_versioning import VersioningMiddleware
+from fastapi_easy_versioning import VersioningMiddleware, versionize
 
 app = FastAPI()
 
 public_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-public_v1 = FastAPI(api_version=1)
-public_v2 = FastAPI(api_version=2)
+public_v1 = versionize(FastAPI(), 1)
+public_v2 = versionize(FastAPI(), 2)
 
 private_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-private_v1 = FastAPI(api_version=1)
-private_v2 = FastAPI(api_version=2)
+private_v1 = versionize(FastAPI(), 1)
+private_v2 = versionize(FastAPI(), 2)
 
 app.mount("/api/public", public_app)
 public_app.mount("/v1", public_v1)
@@ -52,36 +52,59 @@ private_app.mount("/v2", private_v2)
 
 ## Настройка приложений-версий { #api-version }
 
-Middleware определяет, какие FastAPI-приложения участвуют в версионировании, по extra-параметру `api_version` (константа `API_VERSION_KEY`):
-
-- `api_version` должен быть целым числом; версия `0` допустима.
-- Субприложение без `api_version` игнорируется: в него не наследуются эндпоинты и из него не берутся, даже если они помечены зависимостью `versioning()`.
-- `api_version` неверного типа (`"1"`, `True`, `1.0`) — субприложение игнорируется, при этом выдаётся `UserWarning`, чтобы опечатка не осталась незамеченной.
+Версию субприложения объявляет функция `versionize(app, version)`. Она записывает номер в `app.state` приложения и возвращает то же приложение, поэтому её можно вызвать прямо при создании или монтировании:
 
 ```python
-app_v1 = FastAPI(api_version=1)  # участвует в версионировании
+from fastapi_easy_versioning import versionize
+
+app_v1 = versionize(FastAPI(), 1)  # участвует в версионировании
+app.mount("/v2", versionize(FastAPI(title="v2"), 2))
 internal = FastAPI()  # игнорируется
 ```
 
+- Номер версии — целое число; версия `0` допустима.
+- Неверные аргументы — ошибка сразу при вызове: приложение не FastAPI или нецелая версия (`"1"`, `1.0`, `True`) дают `TypeError`.
+- Повторный вызов с той же версией ничего не меняет, а попытка объявить приложение другой версией даёт `ValueError`: одно приложение — одна версия.
+- Субприложение без объявленной версии игнорируется: в него не наследуются эндпоинты и из него не берутся, даже если они помечены зависимостью `versioning()`.
+- Версии читаются при сборке — на первом ASGI-событии. Версию, объявленную или смонтированную позже, подхватит только явный [`rebuild_versioning`](#runtime).
+
 !!! note "`bool` — не `int`"
 
-    Несмотря на то что в Python `True == 1`, `api_version=True` считается ошибкой типа: слишком велика вероятность, что это опечатка, а не намеренный номер версии.
+    Несмотря на то что в Python `True == 1`, `versionize(app, True)` считается ошибкой типа: слишком велика вероятность, что это опечатка, а не намеренный номер версии.
 
-!!! warning "Устарело в 0.4.2"
+!!! tip "`versionize` и `versioning()`"
 
-    FastAPI 0.145 удалил `**extra`, на котором держится `FastAPI(api_version=N)`. Поэтому библиотека ограничивает FastAPI версиями `<0.145`, а при сборке версионирования выдаёт `FutureWarning` — один раз за процесс. В 0.5.0 этот способ заменит новый интерфейс, который поддерживает и FastAPI 0.145+.
+    Названия похожи, но задачи разные: `versionize` объявляет, **какой версией является приложение**, а `versioning()` помечает, **какие эндпоинты** наследуются в следующие версии.
 
-    Если предупреждения у вас превращаются в ошибки (`-W error`, `filterwarnings = error` в pytest), заглушите именно это — до первого ASGI-события, например рядом с созданием приложения:
+### Миграция с 0.4.x { #migration }
 
-    ```python
-    import warnings
+До 0.5.0 версия объявлялась ключевым аргументом `FastAPI(api_version=N)`. FastAPI 0.145 удалил `**extra`, на котором он держится, поэтому там такой вызов падает с `TypeError`. Замена — одна строка на версию:
 
-    warnings.filterwarnings(
-        "ignore", message="Declaring a version with FastAPI", category=FutureWarning
-    )
-    ```
+```python
+# было
+app_v1 = FastAPI(api_version=1)
 
-    В pytest то же самое делает строка `"ignore:Declaring a version with FastAPI:FutureWarning"` в `filterwarnings`.
+# стало
+app_v1 = versionize(FastAPI(), 1)
+```
+
+!!! warning "Переведите объявления до обновления"
+
+    В 0.5.0 снята верхняя граница `fastapi<0.145`, поэтому свежая установка может подтянуть FastAPI 0.145+, и старое объявление упадёт. Перед обновлением переведите объявления на `versionize` или закрепите `fastapi<0.145`.
+
+На FastAPI < 0.145 старый способ пока работает: он используется, если приложение не объявлено через `versionize` (иначе побеждает `versionize`), а при сборке выдаёт `FutureWarning` — один раз за процесс. Значение неверного типа по-прежнему даёт `UserWarning`. Старый способ вместе с константой `API_VERSION_KEY` удалят, когда библиотека перестанет поддерживать FastAPI < 0.145.
+
+Если предупреждения у вас превращаются в ошибки (`-W error`, `filterwarnings = error` в pytest), до миграции заглушите именно это — до первого ASGI-события, например рядом с созданием приложения:
+
+```python
+import warnings
+
+warnings.filterwarnings(
+    "ignore", message="Declaring a version with FastAPI", category=FutureWarning
+)
+```
+
+В pytest то же самое делает строка `"ignore:Declaring a version with FastAPI:FutureWarning"` в `filterwarnings`.
 
 ## Как работает наследование { #inheritance }
 
@@ -89,7 +112,7 @@ internal = FastAPI()  # игнорируется
 
 ```mermaid
 graph LR
-    A["Первое ASGI-событие"] --> B["Поиск версий<br/>по api_version"]
+    A["Первое ASGI-событие"] --> B["Поиск версий,<br/>объявленных versionize"]
     B --> C["Отбор роутов<br/>с versioning()"]
     C --> D["Разрешение until"]
     D --> E["Копирование роутов<br/>в версии origin+1..until"]
@@ -140,7 +163,7 @@ rebuild_versioning(app)  # app — приложение, монтирующее 
 
 ## Совместимость с FastAPI
 
-Кратко: поддерживаются версии от `0.95` до `0.145` (не включая), кроме `0.137.0` и `0.137.1`. Разбор причин и матрица режимов — в [Ограничениях](limitations.md#fastapi).
+Кратко: поддерживаются `0.95` и новее, кроме `0.137.0` и `0.137.1`. Разбор причин и матрица режимов — в [Ограничениях](limitations.md#fastapi).
 
 !!! tip "Полный справочник"
 

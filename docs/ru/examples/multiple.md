@@ -25,17 +25,18 @@ from fastapi import Depends, FastAPI, middleware
 from fastapi_easy_versioning import (
     VersioningMiddleware,
     versioning,
+    versionize,
 )
 
 app = FastAPI()
 
 public_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-public_v1 = FastAPI(api_version=1)
-public_v2 = FastAPI(api_version=2)
+public_v1 = versionize(FastAPI(), 1)
+public_v2 = versionize(FastAPI(), 2)
 
 private_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-private_v1 = FastAPI(api_version=1)
-private_v2 = FastAPI(api_version=2)
+private_v1 = versionize(FastAPI(), 1)
+private_v2 = versionize(FastAPI(), 2)
 
 app.mount("/api/public", public_app)
 public_app.mount("/v1", public_v1)
@@ -102,11 +103,11 @@ graph TD
     A[API Endpoints Availability] --> B[Public API]
     A --> C[Private API]
 
-    B --> B1[v1<br/>api_version=1]
-    B --> B2[v2<br/>api_version=2]
+    B --> B1["v1<br/>versionize(…, 1)"]
+    B --> B2["v2<br/>versionize(…, 2)"]
 
-    C --> C1[v1<br/>api_version=1]
-    C --> C2[v2<br/>api_version=2]
+    C --> C1["v1<br/>versionize(…, 1)"]
+    C --> C2["v2<br/>versionize(…, 2)"]
 
     B1 --> B11["/endpoint ✓<br/>(until=1)"]:::available
     B1 --> B12["/another-endpoint ✓"]:::available

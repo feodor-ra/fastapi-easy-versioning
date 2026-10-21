@@ -66,9 +66,9 @@ def profile_v3() -> ProfileV3: ...
 Inheritance is built once, so a version mounted later needs an explicit rebuild.
 
 ```python
-from fastapi_easy_versioning import rebuild_versioning
+from fastapi_easy_versioning import rebuild_versioning, versionize
 
-app_v3 = FastAPI(api_version=3)
+app_v3 = versionize(FastAPI(), 3)
 app.mount("/v3", app_v3)
 
 rebuild_versioning(app)  # (1)!
@@ -91,8 +91,8 @@ private_app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
 app.mount("/api/public", public_app)
 app.mount("/api/private", private_app)
 
-public_app.mount("/v1", FastAPI(api_version=1))
-private_app.mount("/v1", FastAPI(api_version=1))
+public_app.mount("/v1", versionize(FastAPI(), 1))
+private_app.mount("/v1", versionize(FastAPI(), 1))
 ```
 
 A full walkthrough is in the [example](../examples/multiple.md).

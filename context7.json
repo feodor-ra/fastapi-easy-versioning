@@ -5,8 +5,8 @@
   "folders": ["docs/en"],
   "excludeFolders": ["docs/en/reference"],
   "rules": [
-    "Requires Python >= 3.10 and fastapi >=0.95.0,!=0.137.0,!=0.137.1,<0.145; fastapi is the only runtime dependency.",
-    "A version is a FastAPI sub-application created with an api_version extra and mounted under an aggregating app: `app.mount('/v1', FastAPI(api_version=1))`. The value must be an int (0 is valid, bool is not); a sub-app without it takes no part in versioning. Deprecated since 0.4.2 and emits a FutureWarning: FastAPI 0.145 removed **extra, so it works only on fastapi < 0.145; 0.5.0 introduces a replacement.",
+    "Requires Python >= 3.10 and fastapi >=0.95.0,!=0.137.0,!=0.137.1; fastapi is the only runtime dependency.",
+    "A version is a FastAPI sub-application declared with `versionize(app, version)` and mounted under an aggregating app: `app.mount('/v1', versionize(FastAPI(), 1))`. versionize returns the same app; the version must be an int (0 is valid, bool is not) or it raises TypeError, and re-declaring an app with another version raises ValueError. A sub-app without a declared version takes no part in versioning. Do not confuse versionize (declares an app's version) with versioning() (marks endpoints). The old `FastAPI(api_version=N)` keyword is deprecated (FutureWarning), works only on fastapi < 0.145 and is ignored when versionize is used.",
     "Add VersioningMiddleware to the application that directly mounts the version sub-apps, never to the sub-apps themselves: `app.add_middleware(VersioningMiddleware)`. Several instances can coexist, one per aggregating app, so independent APIs version separately.",
     "Versioning is opt-in: only endpoints carrying `Depends(versioning())` are inherited. Attach it per endpoint, via add_api_route, or on a whole APIRouter with `APIRouter(dependencies=[Depends(versioning())])`.",
     "`versioning()` with no `until` means 'available through the latest version', not 'this version only'; `versioning(until=N)` caps availability at version N inclusive, and the smallest declared `until` wins when a route carries several markers.",

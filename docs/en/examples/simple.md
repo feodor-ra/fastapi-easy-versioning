@@ -28,12 +28,13 @@ from fastapi_easy_versioning import (
     VersionInfo,
     VersioningMiddleware,
     versioning,
+    versionize,
 )
 
 app = FastAPI(middleware=[middleware.Middleware(VersioningMiddleware)])
-app_v1 = FastAPI(api_version=1)
-app_v2 = FastAPI(api_version=2)
-app_v3 = FastAPI(api_version=3)
+app_v1 = versionize(FastAPI(), 1)
+app_v2 = versionize(FastAPI(), 2)
+app_v3 = versionize(FastAPI(), 3)
 
 app.mount("/v1", app_v1)
 app.mount("/v2", app_v2)
@@ -80,9 +81,9 @@ The resulting structure is as follows:
 
 ```mermaid
 graph TD
-    A[Endpoint Availability] --> B[v1<br/>api_version=1]
-    A --> C[v2<br/>api_version=2]
-    A --> D[v3<br/>api_version=3]
+    A[Endpoint Availability] --> B["v1<br/>versionize(…, 1)"]
+    A --> C["v2<br/>versionize(…, 2)"]
+    A --> D["v3<br/>versionize(…, 3)"]
 
     B --> B1["/endpoint ✓<br/>(until=2)"]:::available
     B --> B2["/another-endpoint ✓"]:::available

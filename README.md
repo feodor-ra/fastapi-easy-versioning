@@ -6,7 +6,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
 ![PyPI - Status](https://img.shields.io/pypi/status/fastapi-easy-versioning)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%E2%80%930.144-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
 ![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
 ![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
@@ -39,21 +39,21 @@ Declared once in v1 — served at `/v1/items` **and** `/v2/items`, and present i
 pip install fastapi-easy-versioning
 ```
 
-Requires Python **3.10+** and FastAPI **≥ 0.95, < 0.145** (`0.137.0` and `0.137.1` are excluded). `fastapi` is the only runtime dependency. Declaring a version with `FastAPI(api_version=N)` is deprecated since 0.4.2: 0.5.0 replaces it with a new interface that also supports FastAPI 0.145+.
+Requires Python **3.10+** and FastAPI **≥ 0.95** (`0.137.0` and `0.137.1` are excluded). `fastapi` is the only runtime dependency. Upgrading from 0.4.x? Switch your version declarations to `versionize` first — see the [migration notes](https://feodor-ra.github.io/fastapi-easy-versioning/guide/middleware/#migration).
 
 ## How to use it
 
 Versioning is built from two pieces that work **only together**.
 
-**1. Mount one sub-application per version and add the middleware.** The middleware goes on the aggregating application — the one that directly mounts the versions, never on the versions themselves.
+**1. Mount one sub-application per version and add the middleware.** `versionize(app, N)` declares a sub-application's version. The middleware goes on the aggregating application — the one that directly mounts the versions, never on the versions themselves.
 
 ```python
 from fastapi import Depends, FastAPI
-from fastapi_easy_versioning import VersioningMiddleware, versioning
+from fastapi_easy_versioning import VersioningMiddleware, versioning, versionize
 
 app = FastAPI()
-app_v1 = FastAPI(api_version=1)  # the version number is an int; 0 is valid
-app_v2 = FastAPI(api_version=2)
+app_v1 = versionize(FastAPI(), 1)  # the version number is an int; 0 is valid
+app_v2 = versionize(FastAPI(), 2)
 
 app.mount("/v1", app_v1)
 app.mount("/v2", app_v2)
