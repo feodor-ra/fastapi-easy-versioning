@@ -9,6 +9,29 @@ title: История изменений
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/spec/v2.0.0.html).
 
+## [0.4.2] — 2026-10-21
+
+### Изменено
+
+- Для FastAPI добавлена верхняя граница `<0.145`: в этом релизе удалён
+  `FastAPI(**extra)`, а вместе с ним и объявление `FastAPI(api_version=N)`, на котором
+  держится библиотека.
+- Ограничение сборочного бэкенда расширено до `uv_build>=0.8.3,<0.14.0`.
+
+### Устарело
+
+- Объявление версии через `FastAPI(api_version=N)` теперь выдаёт `FutureWarning`.
+  На FastAPI < 0.145 оно продолжает работать; в 0.5.0 его заменит новый интерфейс,
+  который поддерживает и FastAPI 0.145+.
+
+### Исправлено
+
+- На FastAPI 0.143.1+ версионированный WebSocket-эндпоинт из подключённого роутера
+  падал с «Versioning is not initialized» в своей версии и наследовался без
+  include-префикса и include-зависимостей.
+- Роуты, унаследованные из подключённого роутера, сохраняют его `strict_content_type`:
+  раньше `APIRouter(strict_content_type=False)` в новых версиях снова становился строгим.
+
 ## [0.4.1] — 2026-07-29
 
 Функциональных изменений нет: библиотека ведёт себя ровно так же, как в 0.4.0.
@@ -83,6 +106,7 @@ title: История изменений
   FastAPI-субприложение на версию, наследование помеченных эндпоинтов из старых
   версий в новые и перестройка OpenAPI-схемы каждой версии.
 
+[0.4.2]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.2
 [0.4.1]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.1
 [0.4.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.0
 [0.3.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.3.0

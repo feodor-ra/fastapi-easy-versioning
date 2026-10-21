@@ -9,6 +9,29 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] — 2026-10-21
+
+### Changed
+
+- FastAPI is capped below `0.145`: that release removed `FastAPI(**extra)` and
+  with it the `FastAPI(api_version=N)` declaration this library relies on.
+- The build backend requirement was widened to `uv_build>=0.8.3,<0.14.0`.
+
+### Deprecated
+
+- Declaring a version with `FastAPI(api_version=N)` now emits a `FutureWarning`.
+  It keeps working on FastAPI < 0.145; 0.5.0 replaces it with a new interface
+  that also supports FastAPI 0.145+.
+
+### Fixed
+
+- On FastAPI 0.143.1+ a versioned WebSocket endpoint from an included router
+  failed with "Versioning is not initialized" in its own version and was
+  inherited without the include-time prefix and dependencies.
+- Routes inherited from an included router keep its `strict_content_type`:
+  `APIRouter(strict_content_type=False)` used to turn strict again in newer
+  versions.
+
 ## [0.4.1] — 2026-07-29
 
 No functional changes: the library behaves exactly as in 0.4.0.
@@ -83,6 +106,7 @@ No functional changes: the library behaves exactly as in 0.4.0.
   one FastAPI sub-application per version, inheritance of marked endpoints from
   older versions into newer ones, and a regenerated OpenAPI schema per version.
 
+[0.4.2]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.2
 [0.4.1]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.1
 [0.4.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.0
 [0.3.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.3.0
