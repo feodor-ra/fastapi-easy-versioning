@@ -29,6 +29,10 @@ app.mount("/v2", app_v2)
 1. `api_version` is not a standard FastAPI parameter: unknown keyword arguments land in `app.extra`, which is where the middleware reads it from.
 2. The mount prefix is arbitrary — versions are told apart by `api_version`, not by path.
 
+!!! warning "Deprecated in 0.4.2"
+
+    This declaration does not work on FastAPI 0.145+, so the library caps FastAPI below `0.145` and emits a `FutureWarning`. A replacement lands in 0.5.0 — see [Middleware](guide/middleware.md#api-version).
+
 ## 2. Add the middleware
 
 The middleware goes on the **aggregating** application — the one that directly mounts the versions. Not on the versions themselves.

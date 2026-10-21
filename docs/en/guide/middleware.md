@@ -67,6 +67,22 @@ internal = FastAPI()  # ignored
 
     Even though `True == 1` in Python, `api_version=True` counts as a type error: it is far more likely to be a typo than an intentional version number.
 
+!!! warning "Deprecated in 0.4.2"
+
+    FastAPI 0.145 removed `**extra`, which `FastAPI(api_version=N)` relies on. So the library caps FastAPI below `0.145` and emits a `FutureWarning` when it builds versioning — once per process. In 0.5.0 a new interface replaces this declaration, one that also supports FastAPI 0.145+.
+
+    If your warnings turn into errors (`-W error`, `filterwarnings = error` in pytest), silence this one specifically — before the first ASGI event, for example next to where the application is created:
+
+    ```python
+    import warnings
+
+    warnings.filterwarnings(
+        "ignore", message="Declaring a version with FastAPI", category=FutureWarning
+    )
+    ```
+
+    In pytest, the `"ignore:Declaring a version with FastAPI:FutureWarning"` entry in `filterwarnings` does the same.
+
 ## How inheritance works { #inheritance }
 
 Inheritance is built **once** — on the first ASGI event. Under a real server (uvicorn) that is the lifespan startup event; when the middleware sits on an application mounted inside another one, or in tests, it is the first request. Subsequent requests do no extra work.
@@ -124,7 +140,7 @@ rebuild_versioning(app)  # app is the application that mounts the versions
 
 ## FastAPI compatibility
 
-In short: `0.95` and newer are supported, except `0.137.0` and `0.137.1`. The reasoning and the matrix of routing regimes are in [Limitations](limitations.md#fastapi).
+In short: versions from `0.95` up to (but not including) `0.145` are supported, except `0.137.0` and `0.137.1`. The reasoning and the matrix of routing regimes are in [Limitations](limitations.md#fastapi).
 
 !!! tip "Full reference"
 

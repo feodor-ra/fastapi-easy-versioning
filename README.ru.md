@@ -6,7 +6,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
 ![PyPI - Status](https://img.shields.io/pypi/status/fastapi-easy-versioning)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%E2%80%930.144-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
 ![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
 ![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
@@ -39,7 +39,7 @@ def items() -> list[Item]:
 pip install fastapi-easy-versioning
 ```
 
-Требуется Python **3.10+** и FastAPI **≥ 0.95** (версии `0.137.0` и `0.137.1` исключены). `fastapi` — единственная рантайм-зависимость.
+Требуется Python **3.10+** и FastAPI **≥ 0.95, < 0.145** (версии `0.137.0` и `0.137.1` исключены). `fastapi` — единственная рантайм-зависимость. Объявление версии через `FastAPI(api_version=N)` устарело в 0.4.2: в 0.5.0 его заменит новый интерфейс, который поддерживает и FastAPI 0.145+.
 
 ## Как это использовать
 

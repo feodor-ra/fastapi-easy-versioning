@@ -6,7 +6,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fastapi-easy-versioning)
 ![PyPI - Status](https://img.shields.io/pypi/status/fastapi-easy-versioning)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-easy-versioning)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%E2%80%930.144-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
 ![GitHub Release](https://img.shields.io/github/v/release/feodor-ra/fastapi-easy-versioning)
 ![GitHub Repo stars](https://img.shields.io/github/stars/feodor-ra/fastapi-easy-versioning?style=flat)
@@ -39,7 +39,7 @@ Declared once in v1 — served at `/v1/items` **and** `/v2/items`, and present i
 pip install fastapi-easy-versioning
 ```
 
-Requires Python **3.10+** and FastAPI **≥ 0.95** (`0.137.0` and `0.137.1` are excluded). `fastapi` is the only runtime dependency.
+Requires Python **3.10+** and FastAPI **≥ 0.95, < 0.145** (`0.137.0` and `0.137.1` are excluded). `fastapi` is the only runtime dependency. Declaring a version with `FastAPI(api_version=N)` is deprecated since 0.4.2: 0.5.0 replaces it with a new interface that also supports FastAPI 0.145+.
 
 ## How to use it
 
