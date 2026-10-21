@@ -17,5 +17,23 @@ updates:
       dev-dependencies:
         patterns:
           - "*"
+        # The [build-system] uv_build range has no resolved "previous version",
+        # and Dependabot drops the WHOLE group change when one member fails
+        # that way — keep it in a PR of its own.
+        exclude-patterns:
+          - "uv-build"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Hook revs mirror the lint pins above (ruff, ty, uv); bump them in the same
+  # weekly cycle so the two stay in sync.
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      pre-commit-hooks:
+        patterns:
+          - "*"
     commit-message:
       prefix: "chore(deps)"
