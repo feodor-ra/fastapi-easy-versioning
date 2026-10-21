@@ -454,7 +454,7 @@ test = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "fastapi", specifier = ">=0.95.0,!=0.137.0,!=0.137.1,<0.145" }]
+requires-dist = [{ name = "fastapi", specifier = ">=0.95.0,!=0.137.0,!=0.137.1" }]
 
 [package.metadata.requires-dev]
 dev = [
