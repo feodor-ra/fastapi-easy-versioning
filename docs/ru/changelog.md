@@ -9,6 +9,31 @@ title: История изменений
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-10-21
+
+### Добавлено
+
+- `versionize(app, version)` объявляет версию субприложения — замена
+  `FastAPI(api_version=N)`, который FastAPI 0.145+ не принимает. Функция
+  возвращает то же приложение, поэтому работает
+  `app.mount("/v1", versionize(FastAPI(), 1))`; неверные типы аргументов дают
+  `TypeError`, а объявление приложения другой версией — `ValueError`.
+
+### Изменено
+
+- **Ломающее.** Снята верхняя граница `<0.145` из 0.4.2 — FastAPI 0.145+ снова
+  поддерживается. Свежая установка теперь может подтянуть FastAPI 0.145+, где
+  `FastAPI(api_version=N)` падает с `TypeError`: переведите объявления на
+  `versionize` до обновления или закрепите `fastapi<0.145`. См.
+  [миграцию с 0.4.x](guide/middleware.md#migration).
+
+### Устарело
+
+- `FastAPI(api_version=N)` и `API_VERSION_KEY`. Ключевой аргумент продолжает
+  работать на FastAPI < 0.145, если приложение не объявлено через `versionize`;
+  его `FutureWarning` теперь называет затронутые маунты и указывает на
+  `versionize`. Оба будут удалены вместе с поддержкой FastAPI < 0.145.
+
 ## [0.4.2] — 2026-10-21
 
 ### Изменено
@@ -106,6 +131,7 @@ title: История изменений
   FastAPI-субприложение на версию, наследование помеченных эндпоинтов из старых
   версий в новые и перестройка OpenAPI-схемы каждой версии.
 
+[0.5.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.5.0
 [0.4.2]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.2
 [0.4.1]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.1
 [0.4.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.0

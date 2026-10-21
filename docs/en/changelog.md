@@ -9,6 +9,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-10-21
+
+### Added
+
+- `versionize(app, version)` declares a sub-application's version — the
+  replacement for `FastAPI(api_version=N)`, which FastAPI 0.145+ rejects. It
+  returns the same app, so `app.mount("/v1", versionize(FastAPI(), 1))` works;
+  wrong argument types raise `TypeError`, and declaring an app with another
+  version raises `ValueError`.
+
+### Changed
+
+- **Breaking.** The `<0.145` cap from 0.4.2 is lifted, so FastAPI 0.145+ is
+  supported again. A fresh install may now resolve FastAPI 0.145+, where
+  `FastAPI(api_version=N)` raises `TypeError` — switch your declarations to
+  `versionize` before upgrading, or pin `fastapi<0.145`. See
+  [Migrating from 0.4.x](guide/middleware.md#migration).
+
+### Deprecated
+
+- `FastAPI(api_version=N)` and `API_VERSION_KEY`. The keyword keeps working on
+  FastAPI < 0.145 when an app has no `versionize` declaration; its
+  `FutureWarning` now names the affected mounts and points to `versionize`.
+  Both will be removed together with support for FastAPI < 0.145.
+
 ## [0.4.2] — 2026-10-21
 
 ### Changed
@@ -106,6 +131,7 @@ No functional changes: the library behaves exactly as in 0.4.0.
   one FastAPI sub-application per version, inheritance of marked endpoints from
   older versions into newer ones, and a regenerated OpenAPI schema per version.
 
+[0.5.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.5.0
 [0.4.2]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.2
 [0.4.1]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.1
 [0.4.0]: https://github.com/feodor-ra/fastapi-easy-versioning/releases/tag/v0.4.0
