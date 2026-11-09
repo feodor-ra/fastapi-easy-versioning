@@ -54,9 +54,9 @@ examples = [
     "fastapi[standard]",
 ]
 test = [
-    "anyio~=4.15.1",
+    "anyio>=4.15.1,<4.17.0",
     "httpx2~=2.14.0",
-    "pytest~=9.1.1",
+    "pytest>=9.1.1,<9.3.0",
     "pytest-cov~=7.1.0",
 ]
 docs = [
